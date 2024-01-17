@@ -4,23 +4,36 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 import tracemalloc
 tracemalloc.start()
 
+import db
+import bitazza
+import commex
+
+
 state = {}
 
 BOT_TOKEN = '5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM'
 ADMIN_ID = [1194700554]
 
-course = 2.17
-course_usdt = 33.08
 marje = 1.1
+course_THB = bitazza.get_currency()
+print(course_THB)
+course_rub = commex.get_average()
+print(course_rub)
+
+
 
 selected_user_id = None
-selected_chat_id = None
+
+db.connect()
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
+
+
+##### Команда /user для админа ####
 async def user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     if user_id in ADMIN_ID:
@@ -36,6 +49,11 @@ async def user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    username = update.effective_user.username
+
+    if not db.check_user_exists(user_id):
+        db.add_new_user(user_id, username)
+
     if user_id in ADMIN_ID:
         #admin panel
         keyboard = ReplyKeyboardMarkup(
@@ -135,17 +153,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if text == "Узнать курс":
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс с Bitazza USDT  : {course_usdt} \nКурс с маржой USDT: {course_usdt*marje} \nКурс руб : {course} руб. \n Курс с маржой руб: {course*marje} \n Процент маржи : {round((marje*100),2)} % || {marje}")
             return
-        
+        ##Для админов
         if text == "Остановить переписку с юзером":
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Переиска с юзером {selected_user_id} остановлена")
             selected_user_id = None
             return
         
-        
-        if selected_user_id:
-            await context.bot.get_chat(selected_user_id).send(f'Ответ администратора: {text}')
+        ##Для админов
+        if selected_user_id:            
+            chat_id = db.find_chat_id(selected_user_id)
+
+            if chat_id:
+                await context.bot.send_message(chat_id=chat_id, text=f'Ответ администратора: {text}')
+            else:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"С этим {username} не зарегистрирован чат")
             
-            await context.bot.send_message(chat_id=selected_chat_id, text=f'Ответ администратора: {text}')
 
 
 
@@ -158,7 +180,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс USDT : {course_usdt} USDT \nКурс руб : {course} руб.")
             return
 
-        else:
+        if text.isdigit():
         # Конвертация в баты
             bat = int(text)
             print(bat)
@@ -177,8 +199,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             location_button = KeyboardButton("Отправить местоположение", request_location=True)
 
             keyboard = ReplyKeyboardMarkup([[location_button]])
-
             return
+        else:
+            if db.check_request:
+                if selected_user_id != None:
+                    sel_chat = db.find_chat_id(selected_user_id)
+                    if update.effective_chat.id == int(sel_chat):
+                        username = db.find_name(update.effective_chat.id)
+                        await context.bot.send_message(chat_id=ADMIN_ID[0], text=f'Текст от юзера @{username}: {text}')
+
+
 
 def set_course(new_course):
     global course
@@ -203,7 +233,8 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         await context.bot.send_message(chat_id=query.message.chat_id, text="Пожалуйста, ожидайте, оператор с вами свяжется")
 
         mess = f'Пользователь @{query.from_user.username} запросил: \n\n{query.message.text}'
-        await context.bot.send_message(chat_id=ADMIN_ID, text=mess)
+        db.request_on(query.message.chat_id)
+        await context.bot.send_message(chat_id=ADMIN_ID[0], text=mess)
     
     return True
 
