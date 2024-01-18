@@ -24,6 +24,21 @@ def get(page: int):
 
 banks = ['Raiffeisenbank', 'SBP - Fast Bank Transfer', 'Sberbank', 'Tinkoff', 'Alfa-bank', 'VTB Bank', 'Promsvyaz bank', 'Sovkombank', 'Rosselkhozbank', 'Gazprombank', 'MTS-Bank']
 
+
+trade_method = {
+    'Сбербанк':'Sberbank',
+    'Тиькофф':'Tinkoff',
+    'Газпром Банк':'Gazprombank',
+    'СБП':'SBP - Fast Bank Transfer',
+    'Альфа-банк':'Alfa-bank',
+    'ВТБ':'VTB Bank',
+    'Промсвязьбанк':'Promsvyaz bank',
+    'Россельхозбанк':'Rosselkhozbank',
+    'МТС-Банк':'MTS-Bank',
+    'Райффайзен':'Raiffeisenbank',
+    'Наличные':'',
+    }
+
 def get_get():
     for i in range(1, 10000):
         try:
@@ -34,6 +49,27 @@ def get_get():
         except Exception as e:
             print(f'Остановка по причине: {e}')
             break
+
+
+def get_by_trade_method(method):
+    x=0
+    sum = 0
+    average = 0
+    tr = trade_method[method]
+    for i in get_get():
+        if tr in list(map(lambda x: x['tradeMethodName'], i.tradeMethods)):
+            if x<5:
+                x+=1
+                sum += float(i.price)
+            else:
+                average = sum/x
+                print(average)
+                return round(average,2)
+    if x>0:
+        average = sum/x
+        print(average)
+        return round(average,2)      
+        
 
 
 def get_average():
@@ -61,4 +97,4 @@ def get_average():
         #     'maxSingleTransAmount', i.maxSingleTransAmount,
         # )
 
-print(get_average())
+# print(get_average())

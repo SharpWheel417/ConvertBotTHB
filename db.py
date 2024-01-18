@@ -53,3 +53,15 @@ def check_request(chat_id):
         return True
     else:
         return False
+
+def change_logo_text(text):
+    cur.execute("UPDATE state_data SET  text = %s WHERE type='logo'", (text,))
+    conn.commit()
+
+def get_logo_text():
+    cur.execute("SELECT text FROM state_data WHERE type='logo'")
+    result = cur.fetchone()
+    if result:
+        return result[0]
+    else:
+        return None
