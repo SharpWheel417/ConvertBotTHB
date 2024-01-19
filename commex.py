@@ -68,7 +68,7 @@ def get_by_trade_method(method):
     if x>0:
         average = sum/x
         print(average)
-        return round(average,2)      
+        return round(average,2)
         
 
 
