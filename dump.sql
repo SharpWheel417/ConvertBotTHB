@@ -15,7 +15,7 @@ CREATE TABLE "public"."state_data" (
 ) WITH (oids = false);
 
 INSERT INTO "state_data" ("id", "text", "type") VALUES
-(1,	' Тест нового текста',	'logo                                                                                                                                                                                                                                                           ');
+(1,	' Тест нового текста',	'logo');
 
 DROP TABLE IF EXISTS "users";
 DROP SEQUENCE IF EXISTS users_id_seq;
@@ -30,7 +30,7 @@ CREATE TABLE "public"."users" (
 ) WITH (oids = false);
 
 INSERT INTO "users" ("id", "name", "chat_id", "request") VALUES
-(9,	'Summer_Death                                                                                                                                                                                                                                                   ',	'1194700554                                                                                                                                                                                                                                                     ',	'f'),
-(8,	'OxranaTrudaOnline                                                                                                                                                                                                                                              ',	'5480919609                                                                                                                                                                                                                                                     ',	't');
+(9,	'Summer_Death',	'1194700554',	'f'),
+(8,	'OxranaTrudaOnline','5480919609',	't');
 
 -- 2024-01-18 05:35:12.606239+00

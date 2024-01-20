@@ -1,6 +1,4 @@
-
-import requests
-
+import requests, db
 
 class Payment:
     def __init__(self, responce):
@@ -22,12 +20,19 @@ def get(page: int):
     for data in response['data']:
         yield Payment(data['adDetailResp'])
 
-banks = ['Raiffeisenbank', 'SBP - Fast Bank Transfer', 'Sberbank', 'Tinkoff', 'Alfa-bank', 'VTB Bank', 'Promsvyaz bank', 'Sovkombank', 'Rosselkhozbank', 'Gazprombank', 'MTS-Bank']
 
+
+banks = ['Raiffeisenbank', 'SBP - Fast Bank Transfer', 'Sberbank', 'Tinkoff', 'Alfa-bank', 'VTB Bank', 'Promsvyaz bank', 'Sovkombank', 'Rosselkhozbank', 'Gazprombank', 'MTS-Bank']
+bk = []
+baks = db.get_banks('rus')
+for i in baks:
+    bk.append(i[0])
+
+print(bk)
 
 trade_method = {
     'Сбербанк':'Sberbank',
-    'Тиькофф':'Tinkoff',
+    'Тинькофф':'Tinkoff',
     'Газпром Банк':'Gazprombank',
     'СБП':'SBP - Fast Bank Transfer',
     'Альфа-банк':'Alfa-bank',

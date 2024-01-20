@@ -3,15 +3,15 @@ import psycopg2
 conn = None
 cur = None
 
-def connect():
-    global conn, cur
-    conn = psycopg2.connect(
-    host="localhost",
-    port=5432,
-    database="tg",
-    user="admin",
-    password="admin")
-    cur = conn.cursor()
+
+
+conn = psycopg2.connect(
+host="localhost",
+port=5432,
+database="tg",
+user="admin",
+password="admin")
+cur = conn.cursor()
     
 def check_user_exists(chat_id):
     cur.execute("SELECT * FROM users WHERE chat_id = '%s'", (chat_id,))
@@ -65,3 +65,8 @@ def get_logo_text():
         return result[0]
     else:
         return None
+    
+def get_banks(language: str):
+    cur.execute(f"SELECT {language} FROM banks")
+    result = cur.fetchall()
+    return result
