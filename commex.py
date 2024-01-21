@@ -21,28 +21,7 @@ def get(page: int):
         yield Payment(data['adDetailResp'])
 
 
-
-banks = ['Raiffeisenbank', 'SBP - Fast Bank Transfer', 'Sberbank', 'Tinkoff', 'Alfa-bank', 'VTB Bank', 'Promsvyaz bank', 'Sovkombank', 'Rosselkhozbank', 'Gazprombank', 'MTS-Bank']
-bk = []
-baks = db.get_banks('rus')
-for i in baks:
-    bk.append(i[0])
-
-print(bk)
-
-trade_method = {
-    'Сбербанк':'Sberbank',
-    'Тинькофф':'Tinkoff',
-    'Газпром Банк':'Gazprombank',
-    'СБП':'SBP - Fast Bank Transfer',
-    'Альфа-банк':'Alfa-bank',
-    'ВТБ':'VTB Bank',
-    'Промсвязьбанк':'Promsvyaz bank',
-    'Россельхозбанк':'Rosselkhozbank',
-    'МТС-Банк':'MTS-Bank',
-    'Райффайзен':'Raiffeisenbank',
-    'Наличные':'',
-    }
+trade_method = db.get_trade_methods()
 
 def get_get():
     for i in range(1, 10000):
@@ -56,24 +35,33 @@ def get_get():
             break
 
 
-def get_by_trade_method(method):
+def get_by_trade_method(method, bat, course_THB, course_rub, marje):
+    global trade_method
+    sum_rub = ((bat/course_THB)*course_rub)*marje
     x=0
     sum = 0
     average = 0
     tr = trade_method[method]
+    if method == 'Другие банки':
+       return get_average()
+        
     for i in get_get():
         if tr in list(map(lambda x: x['tradeMethodName'], i.tradeMethods)):
-            if x<5:
-                x+=1
-                sum += float(i.price)
-            else:
-                average = sum/x
-                print(average)
-                return round(average,2)
-    if x>0:
-        average = sum/x
-        print(average)
-        return round(average,2)
+            if float(i.minSingleTransAmount) < sum_rub and float(i.maxSingleTransAmount) > sum_rub:
+                if x<5:
+                    x+=1
+                    sum += float(i.price)
+                else:
+                    average = sum/x
+                    print(average)
+                    return round(average,2)
+        if x>0:
+            average = sum/x
+            print(average)
+            return round(average,2)
+    if x == 0:
+        return get_average()
+
         
 
 
@@ -85,7 +73,7 @@ def get_average():
         mapped_methods = list(map(lambda x: x['tradeMethodName'], i.tradeMethods))
                     
         if x<10:
-            if mapped_methods[0] in banks:
+            if mapped_methods[0] in db.get_banks('eng'):
                 x+=1
                 sum += float(i.price)
         else:

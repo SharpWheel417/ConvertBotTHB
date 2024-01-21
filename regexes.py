@@ -12,5 +12,6 @@ def user_request(str):
     usdt = re.search(r'\((\d+\.\d+) USDT', string).group(1)
     course_rub = re.search(r'по курсу (\d+\.\d+)', string).group(1)
     course_usdt = re.search(r'USDT: (\d+\.\d+)', string).group(1)
+    trade_method = re.search(r'ведется (\d+\.\d+)', string).group(1)
 
-    return bat, rub, usdt, course_rub, course_usdt
+    return bat, rub, usdt, course_rub, course_usdt, trade_method

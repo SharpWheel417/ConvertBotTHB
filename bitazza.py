@@ -3,11 +3,12 @@ from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import WebDriverException
 
 def get_currency() -> str:
+
     """
     Функция получает текущую валюту на веб-странице.
-
     :return: текущая валюта в виде строки, либо 'error' в случае ошибки
     """
+
     # Установите путь к исполняемому файлу Chrome WebDriver
     webdriver_path = './chromedriver_mac64/'
 

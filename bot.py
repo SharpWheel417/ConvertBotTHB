@@ -70,7 +70,7 @@ def count_rub_clean(bat: int):
 
 def count_rub_marje(bat: int, trade: str):
     global course_THB, marje, course_rub
-    course_ruble = commex.get_by_trade_method(trade)
+    course_ruble = commex.get_by_trade_method(trade, bat, user_course_THB, user_course_rub, marje)
 
     ## Если мы не смогли найти среднее значение - то ставим обычный средний курс
     if course_ruble == 'error' or course_ruble == 0 or course_ruble is None:
@@ -104,7 +104,7 @@ async def new_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
 
 
-
+### Комманда Старт ###
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     username = update.effective_user.username
@@ -112,15 +112,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not db.check_user_exists(user_id):
         db.add_new_user(user_id, username)
 
+    ### Админ ###
     if user_id in ADMIN_ID:
         #admin panel
         await context.bot.send_message(chat_id=update.effective_chat.id, text='Привет, админ!', reply_markup=keyboards.get_admin_base())
 
-
+    ### Юзер ###
     else:
-        logo_text = db.get_logo_text()
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=logo_text, reply_markup=keyboards.get_user_base())
+        more_button = InlineKeyboardButton('Больше информации', callback_data="more_inf")
+        
+        reviews_button = InlineKeyboardButton('Прочитать отзывы', url=f"https://t.me/{db.get_review_link()}")
+            # Создание клавиатуры с кнопкой "Запросить"
+        keyboard = InlineKeyboardMarkup([[more_button], [reviews_button]])
 
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=db.get_logo_text(), reply_markup=keyboard,)
+
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите сумму, которая вам необходима в батах или введите ее при помощи кнопок", reply_markup=keyboards.get_user_base())
+
+
+
+
+### Обычное сообщение ####
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     global user_course_THB, course_THB, user_course_rub, course_rub
@@ -227,7 +239,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
         ### Для юзеров ###
         if text == "Узнать курс":
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс USDT/THB : {user_course_THB} USDT \nКурс USDT/RUB : {user_course_rub} руб. /nКурс рубля высчитывается средний по бирже и может изменяться в зависимости от выбора способа оплаты")
+            course_THB_RUB = round(((user_course_rub/user_course_THB)*marje),2)
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Курс THB = {course_THB_RUB} RUB \nКурс USDT = {user_course_THB} THB \nЧтобы точнее узнать курс- выберите сумму, способ оплаты')
             return
         
         if text == "Своя сумма":
@@ -246,16 +260,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ### Для юзеров ###
         ### После выбора суммы ждем когда пользователь выберет способ оплаты ###
         elif user_id in state and state[user_id] == 'ожидание выбора способа оплаты':
-             # Конвертация в баты
-            usdt, rub, crub = count_rub_marje(bat[user_id], text)            
-            average_rub_user[user_id] = crub
-            # Создание кнопки "Запросить"
-            request_button = InlineKeyboardButton('Запросить', callback_data="request")
-            # Создание клавиатуры с кнопкой "Запросить"
-            keyboard = InlineKeyboardMarkup([[request_button]])
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Для получения {bat[user_id]} бат, вам необходимо {rub} руб. ({usdt} USDT)\nРасчёт ведется ({text}) по курсу {course_THB} (USDT: {crub})', reply_markup=keyboard)
+            if text in db.get_banks('rus'):
+                # Конвертация в баты
+                usdt, rub, crub = count_rub_marje(bat[user_id], text)            
+                average_rub_user[user_id] = crub
+                # Создание кнопки "Запросить"
+                request_button = InlineKeyboardButton('Запросить', callback_data="request")
+                # Создание клавиатуры с кнопкой "Запросить"
+                keyboard = InlineKeyboardMarkup([[request_button]])
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Для получения {bat[user_id]} бат, вам необходимо {rub} руб. ({usdt} USDT)\nРасчёт ведется ({text}) по курсу {course_THB} (USDT: {crub})', reply_markup=keyboard)
+                return
+            if text == 'Другая сумма':
+                del(state[user_id])
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Введите сумму, которая вам необходима в батах или введите ее при помощи кнопок', reply_markup=keyboards.get_user_base())
+                return
+            else:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Выберите пожалуйста способ оплаты из предложенных нижу', reply_markup=keyboard)
+                return
 
-            return
 
         if text.isdigit():
 
@@ -288,6 +310,10 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
     # Получаем callback_data из нажатой кнопки
     callback_data = update.callback_query.data
 
+    if callback_data == 'more_inf':
+        await context.bot.send_message(chat_id=query.message.chat_id, text="Курс рассчитывается в автоматическом режиме и зависит от текущего курса на бирже.\nВы можете в течении дня отправлять требуемую сумму в чат и следить за динамикой.\nЗаказ доставки, Общая инструкция по выдачи наличных через банкомат")
+
+    
     if callback_data == 'request':
 
         share_location_button = KeyboardButton("Поделиться геолокацией", request_location=True)
@@ -302,11 +328,38 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
         ## Получаем чисту цену
         clean_count = convert.clean(bat, admin_course_THB, admin_course_rub)
+        gain = float(rub)-float(clean_count)
+        gain_bat = round(gain/ 2)
+        gain_usdt = round(gain/admin_course_rub ,2)
 
-        mess = f'Пользователь @{query.from_user.username} запросил: \n\nБаты: {bat} \nПользователь заплатит: {rub} руб. \nUSDT: {usdt} \nКурс: {course} \n Зарабатывем с этого: {float(rub)-float(clean_count)} руб \nЛичный курс пользователя : {average_rub_user[query.message.chat_id]}'
+        # mess = f'Пользователь @{query.from_user.username} запросил: \n\nБаты: {bat} \nПользователь заплатит: {rub} руб. \nUSDT: {usdt} \nКурс: {course} \n Зарабатывем с этого: {gain} руб \nЛичный курс пользователя : {average_rub_user[query.message.chat_id]}'
+
+        mess = f'''
+        @{query.from_user.username} думает получить {bat} бат через «Сбербанк.... 
+        
+        Курс для клиента: 2,738 (34,0 бат/USDT ; 91,2 руб/USDT)
+        
+        Курс для клиента + маржа: 2,813 (34,1 бат/USDT ; 91,7 руб/USDT)Реальный 
+        
+        курс:2,674 (34,81 бат/USDT ; 91,2 руб/USDT)
+        
+        Сумма оплаты клиентом: {rub} руб. либо 1 765 USDT
+        
+        Сумма реальная: {clean_count} руб. (1 724 USDT)
+        
+        Зарабатываем с этого: {gain_bat} бат или {gain} руб или {gain_usdt} USDT
+        
+        Bitazza: {admin_course_THB}
+        Выбранный способ платежа (): 92,75 руб/USDT, 2,661 руб/ТНВ 
+        Самый выгодный способ платежа: Тиньков 92,5 руб/USDT, 2,561 руб/ТНВ 
+        Самый выгодный объем для обмена: 100 000 руб тиньк (курс: Тиньк 92,5 руб/USDT, 2,561 руб/THB)'''
+
         db.request_on(query.message.chat_id)
+
         for chat_id in ADMIN_ID:
             await context.bot.send_message(chat_id=chat_id, text=mess)
+        
+        db.create_order(query.from_user.username, float(rub), clean_count, usdt, course, marje, gain)
     
     return True
 
@@ -344,8 +397,6 @@ if __name__ == '__main__':
 
     geo_handler = MessageHandler(filters.LOCATION, handle_geo)
     application.add_handler(geo_handler)
-
-    application.add_handler(CallbackQueryHandler(button_callback))
 
 
     application.run_polling()
