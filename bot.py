@@ -5,13 +5,8 @@ tracemalloc.start()
 
 import convert, commex, db, regexes, geo, keyboards
 
-
 BOT_TOKEN = '5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM'
 ADMIN_ID = [1194700554, 6920037183]
-## ГОША 5794240411
-## СЕМА 747612773
-## X 6920037183
-
 
 state = {}
 bat = {}
@@ -26,6 +21,7 @@ admin_course_rub = 91.1
 
 course_THB = 35.6
 course_rub = 91.1
+
 
 # def parse_course():
     
@@ -49,8 +45,6 @@ course_rub = 91.1
 
 # schedule.every(4).hours.do(parse_course)
 
-logo_text = 'Добро пожаловать в Обменник USDT to Bat ! \nЗдесь вы можете обменять рубли на тайские баты по выгодному курсу👌 \n✅ Вы отправляете рубли на карту Tinkoff, Сбер или по СБП и получаете баты: \n💳 на тайскую карту \n🛵 курьер привезет вам наличные \n🌴 в Паттайе🏧 в любом ближайшем банкомате Бангкок Банка, Касикорна, Кунгсри🏘 возможна оплата жилья через недоступные в РФ сервисы \nКурс рассчитывается автоматически в режиме реального времени и зависит от суммы обмена. \nПодробнее о процессе вы можете узнать, отправив боту команду /infoВведите сумму в батах, которая вам необходима, или выберете при помощи кнопок: ⬇'
-
 selected_user_id = None
 
 
@@ -69,14 +63,28 @@ def count_rub_clean(bat: int):
     return usdt, rub
 
 def count_rub_marje(bat: int, trade: str):
-    global course_THB, marje, course_rub
-    course_ruble = commex.get_by_trade_method(trade, bat, user_course_THB, user_course_rub, marje)
+    global course_THB, marje, course_rub, user_course_rub
+
+    if trade == '💶Наличные':
+        course_ruble = user_course_rub
+        local_marje = 1.09
+
+    elif trade == '💵Другие банки':
+        course_ruble =  user_course_rub
+        local_marje = marje
+        
+    elif trade == '🏧USDT':
+        course_ruble = user_course_rub
+        local_marje = marje
+    else:
+        course_ruble = commex.get_by_trade_method(trade, bat, user_course_THB, user_course_rub, marje)
+        local_marje = marje
 
     ## Если мы не смогли найти среднее значение - то ставим обычный средний курс
     if course_ruble == 'error' or course_ruble == 0 or course_ruble is None:
         course_ruble = course_rub
 
-    usdt = bat / (float(course_THB)*marje)
+    usdt = (bat / (float(course_THB))*local_marje)
     rub = usdt*course_ruble*marje
     return round(usdt,2), round(rub,2), course_ruble
 
@@ -106,6 +114,7 @@ async def new_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 ### Комманда Старт ###
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global user_course_rub, user_course_THB
     user_id = update.effective_user.id
     username = update.effective_user.username
 
@@ -127,7 +136,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await context.bot.send_message(chat_id=update.effective_chat.id, text=db.get_logo_text(), reply_markup=keyboard,)
 
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите сумму, которая вам необходима в батах или введите ее при помощи кнопок", reply_markup=keyboards.get_user_base())
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f'''🏷️
+Курс THB = {round(user_course_rub/user_course_THB,2)} RUB 🇷🇺
+Курс USDT = {user_course_THB} THB 🇹🇭 
+
+Чтобы точнее узнать курс выберите cумму, способ оплаты и нажмите разместить заказ, чтобы связаться с оператором ''', reply_markup=keyboards.get_user_base())
 
 
 
@@ -245,7 +258,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         
         if text == "Своя сумма":
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Введите предпочтительную Вам сумму в батах, например 15756")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"😄Введите предпочтительную Вам сумму в батах, например, 15756 ⬇️")
             return
         
         if text == "Поделиться геолокацией":
@@ -268,14 +281,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 request_button = InlineKeyboardButton('Запросить', callback_data="request")
                 # Создание клавиатуры с кнопкой "Запросить"
                 keyboard = InlineKeyboardMarkup([[request_button]])
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Для получения {bat[user_id]} бат, вам необходимо {rub} руб. ({usdt} USDT)\nРасчёт ведется ({text}) по курсу {course_THB} (USDT: {crub})', reply_markup=keyboard)
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. ({round(rub*user_course_rub, 2)} USDT) 💰\nРасчет ведется по курсу ({text}) {round(user_course_rub/user_course_THB, 2)} руб. ({user_course_THB} бат за USDT) 📊', reply_markup=keyboard)
                 return
+            
+            
             if text == 'Другая сумма':
                 del(state[user_id])
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Введите сумму, которая вам необходима в батах или введите ее при помощи кнопок', reply_markup=keyboards.get_user_base())
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'😄Введите предпочтительную Вам сумму в батах, например, 15756 ⬇️', reply_markup=keyboards.get_user_base())
                 return
             else:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Выберите пожалуйста способ оплаты из предложенных нижу', reply_markup=keyboard)
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'🪙 Пожалуйста, выберите способ оплаты \nЭто поможет нам выгоднее для Вас рассчитать курс 📊')
                 return
 
 
@@ -313,7 +328,6 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
     if callback_data == 'more_inf':
         await context.bot.send_message(chat_id=query.message.chat_id, text="Курс рассчитывается в автоматическом режиме и зависит от текущего курса на бирже.\nВы можете в течении дня отправлять требуемую сумму в чат и следить за динамикой.\nЗаказ доставки, Общая инструкция по выдачи наличных через банкомат")
 
-    
     if callback_data == 'request':
 
         share_location_button = KeyboardButton("Поделиться геолокацией", request_location=True)
@@ -321,7 +335,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         keyboard = ReplyKeyboardMarkup([[share_location_button], [select_amount_button]], resize_keyboard=True)
 
         # Отправляем запрос на получение бат
-        await context.bot.send_message(chat_id=query.message.chat_id, text="Пожалуйста, ожидайте, оператор с вами свяжется \n А пока можете поделиться своей геолокацей, чтобы нам было легче доставить вам баты", reply_markup=keyboard)
+        await context.bot.send_message(chat_id=query.message.chat_id, text="✅ Ваш заказ размещен \n🧑‍💻 Оператор @operator4exchange скоро свяжется с вами \nА пока можете посмотреть, где ближайшие банкомат или просто сообщить курьеру где вы находитесь, отправив свое текущее местоположение 🌎", reply_markup=keyboard)
 
         ## Парсим из текста запроса пользоавтеля нужные данные
         bat, rub, usdt, course, crub = regexes.user_request(query.message.text)
@@ -341,7 +355,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         
         Курс для клиента + маржа: 2,813 (34,1 бат/USDT ; 91,7 руб/USDT)Реальный 
         
-        курс:2,674 (34,81 бат/USDT ; 91,2 руб/USDT)
+        Курс: 2,674 (34,81 бат/USDT ; 91,2 руб/USDT)
         
         Сумма оплаты клиентом: {rub} руб. либо 1 765 USDT
         
@@ -357,6 +371,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         db.request_on(query.message.chat_id)
 
         for chat_id in ADMIN_ID:
+            3
             await context.bot.send_message(chat_id=chat_id, text=mess)
         
         db.create_order(query.from_user.username, float(rub), clean_count, usdt, course, marje, gain)
