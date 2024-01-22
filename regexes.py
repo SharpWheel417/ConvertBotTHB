@@ -21,4 +21,9 @@ def user_request(string):
 
 
 def admin_apply_user_name(string):
-    return re.search(r'@(\S+)', string).group(1)
+    username = re.search(r'@(\S+)', string).group(1)
+    order_id_match = re.search(r'ID заказа: ([a-fA-F0-9-]+)', string)
+    if order_id_match:
+        order_id = order_id_match.group(1)
+        print(order_id)
+    return username, order_id

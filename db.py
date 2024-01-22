@@ -1,4 +1,5 @@
 import psycopg2
+import datetime
 
 conn = None
 cur = None
@@ -37,7 +38,7 @@ def add_new_user(chat_id, name) -> None:
     cur.execute("INSERT INTO users (name, chat_id) VALUES (%s, %s)", (name, chat_id))
     conn.commit()
 
-def find_chat_id(name: str) -> str:
+def get_chat_id(name: str) -> str:
     'Поиск пользователя по имени'
     name_clean =  name.replace("@", "").strip()
     cur.execute("SELECT chat_id FROM users WHERE name = %s", (name_clean,))
@@ -125,8 +126,8 @@ def get_trade_methods():
         tm[key] = value
     return tm
 
-def create_order(username, user_pay, admin_pay, course_thb, course_rub, marje, gain, tradeMethod):
-    set = f"INSERT INTO orders (username, user_pay, admin_pay, course_thb, course_rub, marje, gain, trade_method, completed) VALUES ('{username}', {user_pay}, {admin_pay}, {course_thb}, {course_rub}, {marje}, {gain}, '{tradeMethod}', 'request')"
+def create_order(ids, username, user_pay, admin_pay, course_thb, course_rub, marje, gain, tradeMethod):
+    set = f"INSERT INTO orders (ids, username, user_pay, admin_pay, course_thb, course_rub, marje, gain, trade_method, completed, date) VALUES ('{ids}', '{username}', {user_pay}, {admin_pay}, {course_thb}, {course_rub}, {marje}, {gain}, '{tradeMethod}', 'request', '{datetime.datetime.now()}')"
     print(set)
     cur.execute(set)
     conn.commit()
@@ -138,5 +139,32 @@ def check_order_id(id:str):
         return True
     else:
         return False
+    
 
+def set_progress(ids: str):
+    cur.execute("UPDATE orders SET completed = 'progress' WHERE ids = %s", (ids,))
+    conn.commit()
+
+def set_complete(ids: str):
+    cur.execute("UPDATE orders SET completed = 'complete' WHERE ids = %s", (ids,))
+    conn.commit()
+
+def set_mark(ids: str, mark):
+    cur.execute(f"UPDATE orders SET mark = {mark} WHERE ids = '{ids}'",)
+    conn.commit()
+
+def set_review(ids:str, rev: str) -> None:
+    cur.execute(f"UPDATE orders SET review = '{rev}' WHERE ids = '{ids}'",)
+    conn.commit()
+
+
+def get_orders_in_progress():
+    cur.execute("SELECT * FROM orders WHERE completed = 'progress'")
+    result = cur.fetchall()
+    return result
+
+def get_orders_complete():
+    cur.execute("SELECT * FROM orders WHERE completed = 'complete'")
+    result = cur.fetchall()
+    return result
 

@@ -31,3 +31,9 @@ def get_admin_base():
             [['Изменить курс рубля', 'Изменить курс USDT'], ["Изменить процент маржи", 'Узнать курс'], ['Остановить переписку с юзером']],
             resize_keyboard=True
         )
+
+def get_user_complete():
+    return ReplyKeyboardMarkup([['Оставить отзыв'], ['Поставить оценку'], ['Выбрать сумму']], resize_keyboard=True)
+
+def get_user_marks():
+    return ReplyKeyboardMarkup([['1', '2', '3', '4', '5']], resize_keyboard=True)
