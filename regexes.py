@@ -18,3 +18,7 @@ def user_request(string):
         rub_thb, thb_usdt = None, None
 
     return float(bat), float(rub), float(usdt), float(rub_thb), float(thb_usdt), trade_method
+
+
+def admin_apply_user_name(string):
+    return re.search(r'@(\S+)', string).group(1)

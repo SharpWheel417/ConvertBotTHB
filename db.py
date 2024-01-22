@@ -125,9 +125,18 @@ def get_trade_methods():
         tm[key] = value
     return tm
 
-def create_order(username, user_pay, admin_pay, course_thb, course_rub, marje, gain):
-    cur.execute(f"INSERT INTO orders (username, user_pay, admin_pay, course_thb, course_rub, marje, gain) VALUES ('{username}', {user_pay}, {admin_pay}, {course_thb}, {course_rub}, {marje}, {gain})")
+def create_order(username, user_pay, admin_pay, course_thb, course_rub, marje, gain, tradeMethod):
+    set = f"INSERT INTO orders (username, user_pay, admin_pay, course_thb, course_rub, marje, gain, trade_method, completed) VALUES ('{username}', {user_pay}, {admin_pay}, {course_thb}, {course_rub}, {marje}, {gain}, '{tradeMethod}', 'request')"
+    print(set)
+    cur.execute(set)
     conn.commit()
 
+def check_order_id(id:str):
+    cur.execute("SELECT ids FROM orders WHERE ids = %s", (id,))
+    result = cur.fetchone()
+    if result:
+        return True
+    else:
+        return False
 
 

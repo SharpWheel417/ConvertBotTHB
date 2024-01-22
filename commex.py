@@ -64,10 +64,17 @@ def get_by_trade_method(method, bat, course_THB, course_rub, marje):
 
         
 def get_best(summa_rub):
-        for i in get_get():
-            if list(map(lambda x: x['tradeMethodName'], i.tradeMethods)) in db.get_banks('eng'):
-                if float(i.minSingleTransAmount) < summa_rub and float(i.   maxSingleTransAmount) > summa_rub:
-                    return float[i.price], i.tradeMethods
+    banks = db.get_banks('eng')
+    print(banks)
+    for i in get_get():
+        mapped_methods = list(map(lambda x: x['tradeMethodName'], i.tradeMethods))
+        banks = db.get_banks('eng')
+
+        if mapped_methods[0] in banks:
+            if float(i.minSingleTransAmount) < summa_rub and float(i.   maxSingleTransAmount) > summa_rub:
+                return float(i.price), mapped_methods[0]
+        
+    return 0, "none"
 
 
 def get_average():

@@ -2,6 +2,7 @@ from telegram import Bot, Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, Inl
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, CallbackQueryHandler, CallbackContext
 import schedule, time, re, tracemalloc, logging
 tracemalloc.start()
+import uuid
 
 import convert, commex, db, regexes, geo, keyboards
 
@@ -13,7 +14,7 @@ state = {}
 bat = {}
 average_rub_user = {}
 marje = None
-marje = 1.1
+marje = 1.01
 
 user_course_THB = 35.6
 user_course_rub = 91.1
@@ -132,7 +133,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         more_button = InlineKeyboardButton('Больше информации', callback_data="more_inf")
         
         reviews_button = InlineKeyboardButton('Прочитать отзывы', url=f"https://t.me/{db.get_review_link()}")
-            # Создание клавиатуры с кнопкой "Запросить"
+        
         keyboard = InlineKeyboardMarkup([[more_button], [reviews_button]])
 
         await context.bot.send_message(chat_id=update.effective_chat.id, text=db.get_logo_text(), reply_markup=keyboard,)
@@ -264,6 +265,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if text == "Поделиться геолокацией":
             geo_handler()
+        if text == "Не делиться ⛔️":
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Хорошо, ожидайте ответа оператора", reply_markup=keyboards.get_user_base())
+            return
         
         ### Для юзеров ###
         if text == "Выбрать сумму":
@@ -282,7 +286,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 request_button = InlineKeyboardButton('Запросить', callback_data="request")
                 # Создание клавиатуры с кнопкой "Запросить"
                 keyboard = InlineKeyboardMarkup([[request_button]])
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. ({round(rub*user_course_rub, 2)} USDT) 💰\nРасчет ведется по курсу ({text}) {round(user_course_rub/user_course_THB, 2)} руб. ({user_course_THB} бат за USDT) 📊', reply_markup=keyboard)
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. ({usdt} USDT) 💰\nРасчет ведется по курсу ({text}) {round(user_course_rub/user_course_THB, 2)} руб. ({user_course_THB} бат за USDT) 📊', reply_markup=keyboard)
                 return
             
             
@@ -326,19 +330,23 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
     # Получаем callback_data из нажатой кнопки
     callback_data = update.callback_query.data
 
+    if callback_data == 'apply':
+        query.message.text
+
+    if callback_data == 'cancel':
+
     if callback_data == 'more_inf':
         await context.bot.send_message(chat_id=query.message.chat_id, text=db.get_info_text())
 
     if callback_data == 'request':
 
-        share_location_button = KeyboardButton("Поделиться геолокацией", request_location=True)
+        share_location_button = KeyboardButton("Посмотреть банкоматы и сообщить свое местоположение 🏧", request_location=True)
         select_amount_button = KeyboardButton("Выбрать сумму")
-        keyboard = ReplyKeyboardMarkup([[share_location_button], [select_amount_button]], resize_keyboard=True)
+        no_button = KeyboardButton("Не делиться ⛔️")
+        keyboard = ReplyKeyboardMarkup([[share_location_button], [no_button], [select_amount_button]], resize_keyboard=True)
 
         # Отправляем запрос на получение бат
         await context.bot.send_message(chat_id=query.message.chat_id, text="✅ Ваш заказ размещен \n🧑‍💻 Оператор @operator4exchange скоро свяжется с вами \nА пока можете посмотреть, где ближайшие банкомат или просто сообщить курьеру где вы находитесь, отправив свое текущее местоположение 🌎", reply_markup=keyboard)
-
-        await context.bot.send_message(chat_id=query.message.chat_id, text="Посмотреть банкоматы и сообщить свое местоположение 🏧 Не делиться ⛔️")
 
         ## Парсим из текста запроса пользоавтеля нужные данные
         bat, rub, usdt, rub_thb, thb_usdt, trade_method = regexes.user_request(query.message.text)
@@ -354,28 +362,38 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         mess = f'''
         @{query.from_user.username} думает получить {bat} бат через {trade_method}
         
-        Курс для клиента: {rub_thb} ({thb_usdt} бат/USDT ; {round(rub_thb*thb_usdt, 2)} руб/USDT)
+Курс для клиента: {rub_thb} ({thb_usdt} бат/USDT ; {round(rub_thb*thb_usdt, 2)} руб/USDT)
         
-        Реальный Курс: {round(admin_course_rub/admin_course_THB, 2)} ({admin_course_THB} бат/USDT ; {admin_course_rub} руб/USDT)
+Реальный Курс: {round(admin_course_rub/admin_course_THB, 2)} ({admin_course_THB} бат/USDT ; {admin_course_rub} руб/USDT)
         
-        Сумма оплаты клиентом: {rub} руб. либо {rub*(thb_usdt*rub_thb)} USDT
+Сумма оплаты клиентом: {rub} руб. либо {rub*(thb_usdt*rub_thb)} USDT
         
-        Сумма реальная: {clean_count} руб. ({clean} USDT)
+Сумма реальная: {clean_count} руб. ({round(clean_count/admin_course_rub, 2)} USDT)
         
-        Зарабатываем с этого: {gain_bat} бат или {gain} руб или {gain_usdt} USDT
+Зарабатываем с этого: {round(gain_bat,2)} бат или {round(gain,2)} руб или {round(gain_usdt, 2)} USDT
         
-        Bitazza: {admin_course_THB}
+Bitazza: {admin_course_THB}
         
-        Самый выгодный способ платежа: {best_trade} {best_course} руб/USDT, 2,561 руб/ТНВ 
-        Самый выгодный объем для обмена: 100 000 руб тиньк (курс: Тиньк 92,5 руб/USDT, 2,561 руб/THB)'''
+Самый выгодный способ платежа: {best_trade} {best_course} руб/USDT, {round(best_course/admin_course_THB, 2)} руб/ТНВ'''
 
         db.request_on(query.message.chat_id)
 
+
+        cancle_button = InlineKeyboardButton('Отклонить', callback_data="cancle")
+        apply_button = InlineKeyboardButton('Взять в работу', callback_data="apply")
+        # Создание клавиатуры с кнопкой "Запросить"
+        keyboard = InlineKeyboardMarkup([[cancle_button], [apply_button]])
+
+
         for chat_id in ADMIN_ID:
-            3
-            await context.bot.send_message(chat_id=chat_id, text=mess)
+            await context.bot.send_message(chat_id=chat_id, text=mess, reply_markup=keyboard)
+
+
+
+
         
-        db.create_order(query.from_user.username, float(rub), clean_count, usdt, course, marje, gain)
+        ### Записываем данные в базу данных ###
+        db.create_order(query.from_user.username, float(rub), clean_count, usdt, rub_thb, marje, gain, trade_method)
     
     return True
 
