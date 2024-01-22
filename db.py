@@ -82,6 +82,15 @@ def get_logo_text():
     else:
         return None
     
+def get_info_text():
+    'Получаем приветсвенный текст из БД'
+    cur.execute("SELECT text FROM state_data WHERE type='info'")
+    result = cur.fetchone()
+    if result:
+        return result[0]
+    else:
+        return None
+    
 def get_review_link():
     'Получаем строку из бд ("Summer_Death")'
     cur.execute("SELECT text FROM state_data WHERE type='review_link'")

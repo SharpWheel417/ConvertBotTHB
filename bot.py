@@ -7,6 +7,7 @@ import convert, commex, db, regexes, geo, keyboards
 
 BOT_TOKEN = '5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM'
 ADMIN_ID = [1194700554, 6920037183]
+#I = 1194700554
 
 state = {}
 bat = {}
@@ -326,7 +327,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
     callback_data = update.callback_query.data
 
     if callback_data == 'more_inf':
-        await context.bot.send_message(chat_id=query.message.chat_id, text="Курс рассчитывается в автоматическом режиме и зависит от текущего курса на бирже.\nВы можете в течении дня отправлять требуемую сумму в чат и следить за динамикой.\nЗаказ доставки, Общая инструкция по выдачи наличных через банкомат")
+        await context.bot.send_message(chat_id=query.message.chat_id, text=db.get_info_text())
 
     if callback_data == 'request':
 
@@ -337,8 +338,10 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         # Отправляем запрос на получение бат
         await context.bot.send_message(chat_id=query.message.chat_id, text="✅ Ваш заказ размещен \n🧑‍💻 Оператор @operator4exchange скоро свяжется с вами \nА пока можете посмотреть, где ближайшие банкомат или просто сообщить курьеру где вы находитесь, отправив свое текущее местоположение 🌎", reply_markup=keyboard)
 
+        await context.bot.send_message(chat_id=query.message.chat_id, text="Посмотреть банкоматы и сообщить свое местоположение 🏧 Не делиться ⛔️")
+
         ## Парсим из текста запроса пользоавтеля нужные данные
-        bat, rub, usdt, course, crub = regexes.user_request(query.message.text)
+        bat, rub, usdt, rub_thb, thb_usdt, trade_method = regexes.user_request(query.message.text)
 
         ## Получаем чисту цену
         clean_count = convert.clean(bat, admin_course_THB, admin_course_rub)
@@ -346,26 +349,24 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         gain_bat = round(gain/ 2)
         gain_usdt = round(gain/admin_course_rub ,2)
 
-        # mess = f'Пользователь @{query.from_user.username} запросил: \n\nБаты: {bat} \nПользователь заплатит: {rub} руб. \nUSDT: {usdt} \nКурс: {course} \n Зарабатывем с этого: {gain} руб \nЛичный курс пользователя : {average_rub_user[query.message.chat_id]}'
+        best_course, best_trade = commex.get_best(float(rub))
 
         mess = f'''
-        @{query.from_user.username} думает получить {bat} бат через «Сбербанк.... 
+        @{query.from_user.username} думает получить {bat} бат через {trade_method}
         
-        Курс для клиента: 2,738 (34,0 бат/USDT ; 91,2 руб/USDT)
+        Курс для клиента: {rub_thb} ({thb_usdt} бат/USDT ; {round(rub_thb*thb_usdt, 2)} руб/USDT)
         
-        Курс для клиента + маржа: 2,813 (34,1 бат/USDT ; 91,7 руб/USDT)Реальный 
+        Реальный Курс: {round(admin_course_rub/admin_course_THB, 2)} ({admin_course_THB} бат/USDT ; {admin_course_rub} руб/USDT)
         
-        Курс: 2,674 (34,81 бат/USDT ; 91,2 руб/USDT)
+        Сумма оплаты клиентом: {rub} руб. либо {rub*(thb_usdt*rub_thb)} USDT
         
-        Сумма оплаты клиентом: {rub} руб. либо 1 765 USDT
-        
-        Сумма реальная: {clean_count} руб. (1 724 USDT)
+        Сумма реальная: {clean_count} руб. ({clean} USDT)
         
         Зарабатываем с этого: {gain_bat} бат или {gain} руб или {gain_usdt} USDT
         
         Bitazza: {admin_course_THB}
-        Выбранный способ платежа (): 92,75 руб/USDT, 2,661 руб/ТНВ 
-        Самый выгодный способ платежа: Тиньков 92,5 руб/USDT, 2,561 руб/ТНВ 
+        
+        Самый выгодный способ платежа: {best_trade} {best_course} руб/USDT, 2,561 руб/ТНВ 
         Самый выгодный объем для обмена: 100 000 руб тиньк (курс: Тиньк 92,5 руб/USDT, 2,561 руб/THB)'''
 
         db.request_on(query.message.chat_id)
