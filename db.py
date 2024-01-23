@@ -126,8 +126,8 @@ def get_trade_methods():
         tm[key] = value
     return tm
 
-def create_order(ids, username, user_pay, admin_pay, course_thb, course_rub, marje, gain, tradeMethod):
-    set = f"INSERT INTO orders (ids, username, user_pay, admin_pay, course_thb, course_rub, marje, gain, trade_method, completed, date) VALUES ('{ids}', '{username}', {user_pay}, {admin_pay}, {course_thb}, {course_rub}, {marje}, {gain}, '{tradeMethod}', 'request', '{datetime.datetime.now()}')"
+def create_order(ids, username, user_pay, admin_pay, course_thb, course_rub, marje, gain, tradeMethod, user_bat, user_usdt):
+    set = f"INSERT INTO orders (ids, username, user_pay, admin_pay, course_thb, course_rub, marje, gain, trade_method, completed, date, user_bat, user_usdt) VALUES ('{ids}', '{username}', {user_pay}, {admin_pay}, {course_thb}, {course_rub}, {marje}, {gain}, '{tradeMethod}', 'request', '{datetime.datetime.now()}', {user_bat}, {user_usdt})"
     print(set)
     cur.execute(set)
     conn.commit()
@@ -157,7 +157,6 @@ def set_review(ids:str, rev: str) -> None:
     cur.execute(f"UPDATE orders SET review = '{rev}' WHERE ids = '{ids}'",)
     conn.commit()
 
-
 def get_orders_in_progress():
     cur.execute("SELECT * FROM orders WHERE completed = 'progress'")
     result = cur.fetchall()
@@ -165,6 +164,11 @@ def get_orders_in_progress():
 
 def get_orders_complete():
     cur.execute("SELECT * FROM orders WHERE completed = 'complete'")
+    result = cur.fetchall()
+    return result
+
+def get_orders_request():
+    cur.execute("SELECT * FROM orders WHERE completed = 'request'")
     result = cur.fetchall()
     return result
 

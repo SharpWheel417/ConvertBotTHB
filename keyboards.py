@@ -28,7 +28,16 @@ def get_admin_cancel():
 
 def get_admin_base():
     return ReplyKeyboardMarkup(
-            [['Изменить курс рубля', 'Изменить курс USDT'], ["Изменить процент маржи", 'Узнать курс'], ['Остановить переписку с юзером']],
+            [['Изменить курс', 'Заказы'], ['Узнать курс', 'Обратная связь'], ['Остановить переписку с юзером']],
+            resize_keyboard=True
+        )
+
+def get_admin_orders():
+    return ReplyKeyboardMarkup([['Запросы', 'В работе', 'Выполненные', 'Отмененные']], resize_keyboard=True)
+    
+def get_admin_courses():
+    return ReplyKeyboardMarkup(
+            [['Изменить курс рубля', 'Изменить курс USDT'], ["Изменить процент маржи"], ['Выйти в главное меню']],
             resize_keyboard=True
         )
 

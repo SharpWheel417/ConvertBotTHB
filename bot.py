@@ -151,6 +151,33 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global selected_user_id
     user_id = update.effective_user.id
     if user_id in ADMIN_ID:
+
+        if text == 'Заказы':
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Заказы:", reply_markup=keyboards.get_admin_orders())
+
+        if text == 'Запросы':
+
+            orders = db.get_orders_request()
+
+            cancle_button = InlineKeyboardButton('Отклонить', callback_data="cancle")
+            
+            complete_button = InlineKeyboardButton("Выполнен", callback_data='coplete')
+
+            keyboard = InlineKeyboardMarkup([[cancle_button], [complete_button]])
+            
+
+            for i in orders:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'ID заказа: {i[13]} \nОт {i[12]} \nПользователь: @{i[1]}', reply_markup=keyboard)    
+
+
+        # if text == 'В работе':
+
+        # if text == 'Выполненые':
+        
+
+        if text == 'Изменить курс':
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Выберите, что хотите изменить:", reply_markup=keyboards.get_admin_courses())
+
         # admin panel
         if text == "Изменить курс рубля":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
@@ -243,6 +270,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"С этим {username} не зарегистрирован чат")
             
+
+
+
+
+
     ### Для юзеров ###
     ##################
     if user_id not in ADMIN_ID:
@@ -361,12 +393,14 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
     if callback_data == 'apply':
         ##Меняем кнопки###
-        new_inline_keyboard = [[
-        InlineKeyboardButton("Выполнен", callback_data='coplete'),
-        ]]
+
+        cancle_button = InlineKeyboardButton('Отклонить', callback_data="cancle")
+            
+        complete_button = InlineKeyboardButton("Выполнен", callback_data='coplete')
+
+        keyboard = InlineKeyboardMarkup([[cancle_button], [complete_button]])
     
-        reply_markup = InlineKeyboardMarkup(new_inline_keyboard)
-        await context.bot.edit_message_reply_markup(chat_id=query.message.chat_id, message_id=query.message.message_id, reply_markup=reply_markup)
+        await context.bot.edit_message_reply_markup(chat_id=query.message.chat_id, message_id=query.message.message_id, reply_markup=keyboard)
 
         username, order_id = regexes.admin_apply_user_name(query.message.text)
         chat_id = db.get_chat_id(username)
@@ -425,6 +459,8 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         if db.check_order_id(ids):
             ids = str(uuid.uuid4())
 
+        user_want_usdt = 10
+
         mess = f'''
         ID заказа: {ids}
 @{query.from_user.username} думает получить {bat} бат через {trade_method}
@@ -450,13 +486,11 @@ Bitazza: {admin_course_THB}
         # Создание клавиатуры с кнопкой "Запросить"
         keyboard = InlineKeyboardMarkup([[cancle_button], [apply_button]])
 
-
         for chat_id in ADMIN_ID:
             await context.bot.send_message(chat_id=chat_id, text=mess, reply_markup=keyboard)
-
         
         ### Записываем данные в базу данных ###
-        db.create_order(ids, query.from_user.username, float(rub), clean_count, usdt, rub_thb, marje, gain, trade_method)
+        db.create_order(ids, query.from_user.username, float(rub), clean_count, usdt, rub_thb, marje, gain, trade_method, bat, user_want_usdt)
     
     return True
 
