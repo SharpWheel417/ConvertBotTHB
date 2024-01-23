@@ -28,10 +28,7 @@ def check_user_exists(chat_id) -> bool:
     'Проверяем наличие пользователя в бд r: true/false'
     cur.execute("SELECT * FROM users WHERE chat_id = '%s'", (chat_id,))
     result = cur.fetchone()
-    if result:
-        return True
-    else:
-        return False
+    return bool(result)
 
 def add_new_user(chat_id, name) -> None:
     'Добавляем пользователя в бд'
@@ -145,6 +142,10 @@ def set_progress(ids: str):
     cur.execute("UPDATE orders SET completed = 'progress' WHERE ids = %s", (ids,))
     conn.commit()
 
+def set_cancle(ids: str):
+    cur.execute("UPDATE orders SET completed = 'cancle' WHERE ids = %s", (ids,))
+    conn.commit()
+
 def set_complete(ids: str):
     cur.execute("UPDATE orders SET completed = 'complete' WHERE ids = %s", (ids,))
     conn.commit()
@@ -172,3 +173,27 @@ def get_orders_request():
     result = cur.fetchall()
     return result
 
+def get_orders_cancle():
+    cur.execute("SELECT * FROM orders WHERE completed = 'cancle'")
+    result = cur.fetchall()
+    return result
+
+def get_ready():
+    cur.execute("SELECT count(*) FROM orders WHERE completed = 'complete'")
+    count = cur.fetchone()[0] 
+    return count
+
+def get_revenue():
+    cur.execute("SELECT sum(gain) FROM orders WHERE completed = 'complete'")
+    result = cur.fetchone()[0]
+    return result
+
+def get_marks():
+    cur.execute("SELECT avg(mark) FROM orders WHERE completed = 'complete'")
+    result = cur.fetchone()[0]
+    return round(result, 2)
+
+def get_count_users():
+    cur.execute("SELECT count(*) FROM users")
+    result = cur.fetchone()[0]
+    return result

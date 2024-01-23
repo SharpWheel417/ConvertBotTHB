@@ -4,11 +4,13 @@ import schedule, time, re, tracemalloc, logging
 tracemalloc.start()
 import uuid
 
-import convert, commex, db, regexes, geo, keyboards
+import convert, commex, db, regexes, geo, keyboards, bitazza
 
 BOT_TOKEN = '5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM'
-ADMIN_ID = [1194700554, 6920037183]
+ADMIN_ID = [1194700554]
+CHANEL_ID = 'channel4exchange_thai'
 #I = 1194700554
+# Exchange Admin = 6920037183
 
 state = {}
 bat = {}
@@ -22,31 +24,32 @@ user_course_rub = 91.1
 admin_course_THB = 35.6
 admin_course_rub = 91.1
 
-course_THB = 35.6
+course_THB = 100
 course_rub = 91.1
 
 
-# def parse_course():
+def parse_course():
     
-#     new_course_rub = commex.get_average()
-#     global course_rub
-#     if (new_course_rub>course_rub):
-#             course_rub = new_course_rub
-#     print("Average:", course_rub)
+    new_course_rub = commex.get_average()
+    global course_rub
+    if (new_course_rub>course_rub):
+            course_rub = new_course_rub
+    print("Average:", course_rub)
 
-#     new_course_THB = bitazza.get_currency()
-#     if new_course_THB == 'error':
-#         raise Exception('Failed to get THB course from Bitazza')
-#     global course_THB
-#     if(float(new_course_THB)<course_THB):
-#         course_THB = new_course_THB    
-#     print(course_THB)
+    new_course_THB = bitazza.get_currency()
+    if new_course_THB == 'error':
+        raise Exception('Failed to get THB course from Bitazza')
+    global user_course_THB, admin_course_THB
+    if(float(new_course_THB)<course_THB):
+        user_course_THB = new_course_THB 
+    admin_course_THB = new_course_THB
+
+    print(course_THB)
     
-#     return float(course_THB)
 
-# parse_course()
+parse_course()
 
-# schedule.every(4).hours.do(parse_course)
+schedule.every(4).hours.do(parse_course)
 
 selected_user_id = None
 
@@ -55,7 +58,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-
 
 def count_rub_clean(bat: int):
     global course_THB
@@ -90,7 +92,6 @@ def count_rub_marje(bat: int, trade: str):
     usdt = (bat / (float(course_THB))*local_marje)
     rub = usdt*course_ruble*marje
     return round(usdt,2), round(rub,2), course_ruble
-
 
 ##### Команда /user для админа ####
 async def user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -139,9 +140,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await context.bot.send_message(chat_id=update.effective_chat.id, text=db.get_logo_text(), reply_markup=keyboards.get_user_base())
 
-
-
-
 ### Обычное сообщение ####
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -152,29 +150,88 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if user_id in ADMIN_ID:
 
+        if text == 'Главное менюч':
+            await context.bot.send_message(chat_id=update.effective_chat.id, text='На главную', reply_markup=keyboards.get_admin_base())
+
         if text == 'Заказы':
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Заказы:", reply_markup=keyboards.get_admin_orders())
 
+
+
+        ### СТАТИСТИКА ###
+        if text == 'Статистика':
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Заказы:", reply_markup=keyboards.get_admin_stats())
+
+        if text == 'Выполненые':
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Вы выполнили: {db.get_ready()} заказов')
+
+        if text == 'Выручка (руб)':
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Выручка: {db.get_revenue()} руб.')
+
+        if text == "Оценки":
+        
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Средняя оценка: {db.get_marks()}")
+
+        if text == 'Всего пользователей':
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Всего пользователей: {db.get_count_users()}')
+        
+
+
+        ### ЗАПРОСЫ ###
         if text == 'Запросы':
 
             orders = db.get_orders_request()
 
-            cancle_button = InlineKeyboardButton('Отклонить', callback_data="cancle")
-            
-            complete_button = InlineKeyboardButton("Выполнен", callback_data='coplete')
+            if orders.__len__()  == 0 or orders is None:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Запросы отсутствуют")
 
-            keyboard = InlineKeyboardMarkup([[cancle_button], [complete_button]])
-            
-
-            for i in orders:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'ID заказа: {i[13]} \nОт {i[12]} \nПользователь: @{i[1]}', reply_markup=keyboard)    
+            else:
+                for i in orders:
+                    await context.bot.send_message(chat_id=update.effective_chat.id, text=f'ID заказа: {i[13]} \nОт {i[12]} \nПользователь: @{i[1]}', reply_markup=keyboards.get_admin_inline_buttons())    
 
 
-        # if text == 'В работе':
+        if text == 'В работе':
 
-        # if text == 'Выполненые':
+            orders = db.get_orders_in_progress()
+
+            if orders.__len__()  == 0 or orders is None:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Заказы в работе отсутствуют")
+            else:
+                for i in orders:
+                    await context.bot.send_message(chat_id=update.effective_chat.id, text=f'ID заказа: {i[13]} \nОт {i[12]} \nПользователь: @{i[1]}', reply_markup=keyboards.get_admin_inline_buttons())
+
+        if text == 'Выполненные':
+
+            orders = db.get_orders_complete()
+
+            if orders.__len__()  == 0 or orders is None:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Выполненные заказы отсутствуют")
+            else:
+
+                text = ''
+                for i in orders:
+                    text += f'ID заказа: {i[13]} \nПользователь: @{i[1]} \n\n'
+
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+        if text == 'Отмененные':
+
+            orders = db.get_orders_cancle()
+
+            if orders.__len__()  == 0 or orders is None:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Отмененные заказы отсутствуют")
+            else:
+                text = 'Отмененные\n'
+                for i in orders:
+                    text += f'ID заказа: {i[13]} \nПользователь: @{i[1]} \n\n'
+
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
         
 
+
+        ### КУРСЫ ###
         if text == 'Изменить курс':
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Выберите, что хотите изменить:", reply_markup=keyboards.get_admin_courses())
 
@@ -293,9 +350,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif user_id in state and state[user_id] == 'ожидание оценки':
             db.set_mark(complete[user_id], text)
 
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="Спасибо за оценку!")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Спасибо за оценку!", reply_markup=keyboards.get_user_complete())
             
             del(state[user_id])
+            return
 
         elif user_id in state and state[user_id] == 'ожидание отзыва':
             db.set_review(complete[user_id], text)
@@ -331,7 +389,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         ### Для юзеров ###
         if text == "Выбрать сумму":
-            del(state[user_id])
+            if user_id in state:
+                del(state[user_id])
             
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Теперь вы можете выбрать сумму", reply_markup=keyboards.get_user_base())
             return
@@ -360,7 +419,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
 
 
-        if text.isdigit():
+        elif text.isdigit():
+
+            if user_id in state and state[user_id] == 'ожидание оценки':
+                del(state[user_id])
+                return
 
             state[user_id] = 'ожидание выбора способа оплаты'
             bat[user_id] = int(text)
@@ -377,12 +440,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         username = db.find_name(update.effective_chat.id)
                         await context.bot.send_message(chat_id=ADMIN_ID[0], text=f'Текст от юзера @{username}: {text}')
 
-
-
-
-
-
-
 ## Кнопка "Запросить" ###
 async def button_callback(update: Update, context: CallbackContext, *args, **kwargs):
 
@@ -396,7 +453,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
         cancle_button = InlineKeyboardButton('Отклонить', callback_data="cancle")
             
-        complete_button = InlineKeyboardButton("Выполнен", callback_data='coplete')
+        complete_button = InlineKeyboardButton("Выполнен", callback_data='complete')
 
         keyboard = InlineKeyboardMarkup([[cancle_button], [complete_button]])
     
@@ -410,13 +467,15 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
         db.set_progress(order_id)
 
-    if callback_data == 'coplete':
+    if callback_data == 'complete':
 
         username, order_id = regexes.admin_apply_user_name(query.message.text)
         chat_id = db.get_chat_id(username)
 
         for id in ADMIN_ID:
-            await context.bot.send_message(chat_id=id, text=f'Заказ {order_id} \nДля @{username} \nВыполнен!')    
+            await context.bot.send_message(chat_id=id, text=f'Заказ {order_id} \nДля @{username} \nВыполнен!', reply_markup=None)   
+
+        await context.bot.edit_message_reply_markup(chat_id=query.message.chat_id, message_id=query.message.message_id, reply_markup=None) 
 
         ## Отправляем сообщение пользователю
         await context.bot.send_message(chat_id=chat_id, text=f'Ваш ID заказа: {order_id} выполнен! \nБлагодарим за сотрудничество и доверие 🤝 \nРасскажите, как прошел Ваш заказ и оставьте отзыв \nТак мы становимся лучше для Вас 💚', reply_markup=keyboards.get_user_complete())
@@ -425,12 +484,17 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
         db.set_complete(order_id)
 
+    if callback_data == 'cancle':
 
-    if callback_data == 'cancel':
-        print()
+        username, order_id = regexes.admin_apply_user_name(query.message.text)
+        chat_id = db.get_chat_id(username)
 
-    if callback_data == 'more_inf':
-        await context.bot.send_message(chat_id=query.message.chat_id, text=db.get_info_text())
+        for id in ADMIN_ID:
+            await context.bot.send_message(chat_id=id, text=f'Заказ {order_id} \nДля @{username} \nОтменен', reply_markup=None)
+
+        await context.bot.edit_message_reply_markup(chat_id=query.message.chat_id, message_id=query.message.message_id, reply_markup=None)   
+
+        db.set_cancle(order_id)
 
     if callback_data == 'request':
 
