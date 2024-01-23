@@ -6,7 +6,7 @@ import uuid
 
 import convert, commex, db, regexes, geo, keyboards, bitazza
 
-BOT_TOKEN = '5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM'
+BOT_TOKEN = '6472860227:AAEQ3j-L8X9w_fQuSBprXt7PZ_-HyUW_AnU'
 ADMIN_ID = [1194700554]
 CHANEL_ID = 'channel4exchange_thai'
 #I = 1194700554
@@ -24,7 +24,7 @@ user_course_rub = 91.1
 admin_course_THB = 35.6
 admin_course_rub = 91.1
 
-course_THB = 100
+course_THB = 35.2
 course_rub = 91.1
 
 
@@ -47,7 +47,7 @@ def parse_course():
     print(course_THB)
     
 
-parse_course()
+# parse_course()
 
 schedule.every(4).hours.do(parse_course)
 
@@ -89,7 +89,7 @@ def count_rub_marje(bat: int, trade: str):
     if course_ruble == 'error' or course_ruble == 0 or course_ruble is None:
         course_ruble = course_rub
 
-    usdt = (bat / (float(course_THB))*local_marje)
+    usdt = (bat / (float(course_THB))*float(local_marje))
     rub = usdt*course_ruble*marje
     return round(usdt,2), round(rub,2), course_ruble
 
@@ -533,7 +533,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         
 Реальный Курс: {round(admin_course_rub/admin_course_THB, 2)} ({admin_course_THB} бат/USDT ; {admin_course_rub} руб/USDT)
         
-Сумма оплаты клиентом: {rub} руб. либо {rub*(thb_usdt*rub_thb)} USDT
+Сумма оплаты клиентом: {rub} руб. либо {round(rub/(thb_usdt*rub_thb), 2)} USDT
         
 Сумма реальная: {clean_count} руб. ({round(clean_count/admin_course_rub, 2)} USDT)
         

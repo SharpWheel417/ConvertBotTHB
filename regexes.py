@@ -11,7 +11,7 @@ def user_request(string):
     usdt = re.search(r'(\d+(?:\.\d+)?) USDT', string).group(1)
     trade_method = re.search(r'по курсу \((?:)?([^)]+)\)', string).group(1)
 
-    last_two_numbers = re.findall(r'\b\d+\b', string)[-2:]
+    last_two_numbers = re.findall(r'\b\d+\.\d+\b', string)[-2:]
     if len(last_two_numbers) >= 2:
         rub_thb, thb_usdt = last_two_numbers
     else:
