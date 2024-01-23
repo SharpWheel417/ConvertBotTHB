@@ -9,7 +9,7 @@ import convert, commex, db, regexes, geo, keyboards, bitazza
 BOT_TOKEN = '5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM'
 #battle-life = 5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM
 #tabletka = 6472860227:AAEQ3j-L8X9w_fQuSBprXt7PZ_-HyUW_AnU
-ADMIN_ID = [1194700554]
+ADMIN_ID = [1194700554, 6920037183]
 CHANEL_ID = 'channel4exchange_thai'
 #I = 1194700554
 # Exchange Admin = 6920037183
