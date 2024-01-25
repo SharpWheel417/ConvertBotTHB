@@ -40,9 +40,8 @@ def get_admin_orders():
     
 def get_admin_courses():
     return ReplyKeyboardMarkup(
-            [['Изменить курс рубля', 'Изменить курс USDT'], ["Изменить процент маржи"], ['Главное меню']],
-            resize_keyboard=True
-        )
+            [['Изменить курс рубля', 'Изменить курс USDT'], ["Изменить процент маржи для банков", 'Изменить процент маржи для USDT', 'Изменить процент маржи для налички'], ['Главное меню']],
+            resize_keyboard=True)
 
 def get_user_complete():
     return ReplyKeyboardMarkup([['Оставить отзыв'], ['Поставить оценку'], ['Выбрать сумму']], resize_keyboard=True)
@@ -54,6 +53,15 @@ def get_admin_inline_buttons():
     cancle_button = InlineKeyboardButton('Отклонить', callback_data="cancle")
             
     complete_button = InlineKeyboardButton("Взять в работу", callback_data='apply')
+
+    keyboard = InlineKeyboardMarkup([[cancle_button], [complete_button]])
+
+    return keyboard
+
+def get_admin_inline_buttons_in_progress():
+    cancle_button = InlineKeyboardButton('Отклонить', callback_data="cancle")
+            
+    complete_button = InlineKeyboardButton("Выполнен", callback_data='complete')
 
     keyboard = InlineKeyboardMarkup([[cancle_button], [complete_button]])
 

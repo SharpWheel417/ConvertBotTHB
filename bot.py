@@ -19,21 +19,23 @@ bat = {}
 average_rub_user = {}
 complete = {}
 marje = None
-marje = 1.01
+marje = 1.025
+usdt_marje = 1.03
+cash_marje = 1.05
 
-user_course_THB = 35.6
+user_course_THB = 100
 user_course_rub = 91.1
 admin_course_THB = 35.6
 admin_course_rub = 91.1
 
-course_THB = 35.2
+course_THB = 100
 course_rub = 91.1
 
 
-def parse_course():
+def parse_course(update: bool):
     
     new_course_rub = commex.get_average()
-    global course_rub
+    global course_rub, course_THB
     if (new_course_rub>course_rub):
             course_rub = new_course_rub
     print("Average:", course_rub)
@@ -42,16 +44,22 @@ def parse_course():
     if new_course_THB == 'error':
         raise Exception('Failed to get THB course from Bitazza')
     global user_course_THB, admin_course_THB
-    if(float(new_course_THB)<course_THB):
-        user_course_THB = new_course_THB 
-    admin_course_THB = new_course_THB
+    if update is False:
+        if(float(new_course_THB)<course_THB):
+            user_course_THB = new_course_THB
+        admin_course_THB = new_course_THB
+        course_THB = new_course_THB
+    else:
+        user_course_THB = new_course_THB
+        admin_course_THB = new_course_THB
+        course_THB = new_course_THB
 
     print(course_THB)
     
 
-# parse_course()
+parse_course(True)
 
-schedule.every(4).hours.do(parse_course)
+schedule.every(1).hours.do(parse_course)
 
 selected_user_id = None
 
@@ -61,28 +69,25 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-def count_rub_clean(bat: int):
-    global course_THB
-    global course_rub
-    global marje
-    usdt = bat / course_THB
-    rub = (bat / course_THB)*course_rub
-    return usdt, rub
+def count_thb_usdt_user(bat):
+    global user_course_THB, usdt_marje
+    return round(float((float(bat)/(float(user_course_THB)*(2-usdt_marje)))),2)
 
-def count_rub_marje(bat: int, trade: str):
-    global course_THB, marje, course_rub, user_course_rub
+def count_rub_marje(bat: int, trade: str, thb_course): 
+    global marje, course_rub, user_course_rub, user_course_THB, cash_marje
 
     if trade == '💶Наличные':
         course_ruble = user_course_rub
-        local_marje = 1.09
+        local_marje = float(cash_marje)
 
     elif trade == '💵Другие банки':
         course_ruble =  user_course_rub
         local_marje = marje
-        
+
     elif trade == '🏧USDT':
         course_ruble = user_course_rub
-        local_marje = marje
+        local_marje = usdt_marje
+    
     else:
         course_ruble = commex.get_by_trade_method(trade, bat, user_course_THB, user_course_rub, marje)
         local_marje = marje
@@ -91,9 +96,22 @@ def count_rub_marje(bat: int, trade: str):
     if course_ruble == 'error' or course_ruble == 0 or course_ruble is None:
         course_ruble = course_rub
 
-    usdt = (bat / (float(course_THB))*float(local_marje))
-    rub = usdt*course_ruble*marje
-    return round(usdt,2), round(rub,2), course_ruble
+    usdt = (bat / round(user_course_THB*(2-local_marje),2))
+
+    ## Курс Баты к Рублю
+    thb_rub = round((course_ruble*local_marje)/(user_course_THB*(2-local_marje)),2)
+
+    c_rub = round(cruble/round(user_course_THB*(2-local_marje),2),2)
+    rub = bat * c_rub
+    
+    cruble = round((course_ruble*local_marje), 2)
+
+    ##курс баты с маржой
+    c_thb = round(user_course_THB*(2-local_marje),2)
+
+    # Курс Рубля к Бате
+
+    return round(usdt,2), round(rub,2), cruble, c_rub, c_thb
 
 ##### Команда /user для админа ####
 async def user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -124,6 +142,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     username = update.effective_user.username
 
+    if user_id in state:
+        del(state[user_id])
+
     if not db.check_user_exists(user_id):
         db.add_new_user(user_id, username)
 
@@ -136,7 +157,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         more_button = InlineKeyboardButton('Больше информации', callback_data="more_inf")
         
-        reviews_button = InlineKeyboardButton('Прочитать отзывы', url=f"https://t.me/{db.get_review_link()}")
+        reviews_button = InlineKeyboardButton('Прочитать отзывы', url=f"{db.get_review_link()}")
         
         keyboard = InlineKeyboardMarkup([[more_button], [reviews_button]])
 
@@ -145,14 +166,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ### Обычное сообщение ####
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    global user_course_THB, course_THB, user_course_rub, course_rub
+    global user_course_THB, course_THB, user_course_rub, course_rub, usdt_marje, cash_marje, marje
     
     text = update.message.text
     global selected_user_id
     user_id = update.effective_user.id
     if user_id in ADMIN_ID:
 
-        if text == 'Главное менюч':
+        if text == 'Главное меню':
             await context.bot.send_message(chat_id=update.effective_chat.id, text='На главную', reply_markup=keyboards.get_admin_base())
 
         if text == 'Заказы':
@@ -202,7 +223,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Заказы в работе отсутствуют")
             else:
                 for i in orders:
-                    await context.bot.send_message(chat_id=update.effective_chat.id, text=f'ID заказа: {i[13]} \nОт {i[12]} \nПользователь: @{i[1]}', reply_markup=keyboards.get_admin_inline_buttons())
+                    await context.bot.send_message(chat_id=update.effective_chat.id, text=f'ID заказа: {i[13]} \nОт {i[12]} \nПользователь: @{i[1]}', reply_markup=keyboards.get_admin_inline_buttons_in_progress())
 
         if text == 'Выполненные':
 
@@ -286,33 +307,76 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число для изменения курса.")
                 
             
-        if text == "Изменить процент маржи":
-            # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'ожидание числа для изменения маржи'
-            # Запрашиваем число для изменения курса
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число для изменения процента маржи (в процентах):", reply_markup=keyboards.get_admin_cancel())
+        
 
-        elif user_id in state and state[user_id] == 'ожидание числа для изменения маржи':
+        elif user_id in state and state[user_id] == 'ожидание числа для изменения маржи банков':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс не изменен, по прежнему {marje*100} % || {marje}", reply_markup=keyboards.get_admin_base())
                 del state[user_id]
                 return
-            
             try:
-                convert.set_marje(float(text))
+                marje = float((float(text)/100)+1)
                 # Выполняем действия для изменения курса
-                await context.bot.send_message(chat_id=update.effective_chat.id, text="Курс изменен", reply_markup=keyboards.get_admin_base())
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс маржи для банков изменен на {marje}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
                 del state[user_id]
-
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число для изменения курса.Или напишите Отмена.", reply_markup=keyboards.get_admin_base())
+
+        elif user_id in state and state[user_id] == 'ожидание числа для изменения маржи для USDT':
+            global usdt_marje
+            if text == "Отмена":
+                # Сбрасываем состояние
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс не изменен, по прежнему {usdt_marje*100} % || {usdt_marje}", reply_markup=keyboards.get_admin_base())
+                del state[user_id]
+                return
+            try:
+                usdt_marje = float((float(text)/100)+1)
+                # Выполняем действия для изменения курса
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс маржи для USDT изменен на {usdt_marje}", reply_markup=keyboards.get_admin_base())
+                # Сбрасываем состояние
+                del state[user_id]
+            except ValueError:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число для изменения курса.Или напишите Отмена.", reply_markup=keyboards.get_admin_base())
+
+        elif user_id in state and state[user_id] == 'ожидание числа для изменения маржи для налички':
+            if text == "Отмена":
+                # Сбрасываем состояние
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс не изменен, по прежнему {cash_marje*100} % || {cash_marje}", reply_markup=keyboards.get_admin_base())
+                del state[user_id]
+                return
+            try:
+                cash_marje = float((float(text)/100)+1)
+                # Выполняем действия для изменения курса
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс маржи для налички изменен на {cash_marje}", reply_markup=keyboards.get_admin_base())
+                # Сбрасываем состояние
+                del state[user_id]
+            except ValueError:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число для изменения курса.Или напишите Отмена.", reply_markup=keyboards.get_admin_base())
+
+        if text == "Изменить процент маржи для банков":
+            # Устанавливаем состояние в 'ожидание числа для изменения курса'
+            state[user_id] = 'ожидание числа для изменения маржи банков'
+            # Запрашиваем число для изменения курса
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число для изменения процента маржи для банков (в процентах):", reply_markup=keyboards.get_admin_cancel())
+
+        if text == "Изменить процент маржи для USDT":
+            # Устанавливаем состояние в 'ожидание числа для изменения курса'
+            state[user_id] = 'ожидание числа для изменения маржи для USDT'
+            # Запрашиваем число для изменения курса
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число для изменения процента маржи  для usdt (в процентах):", reply_markup=keyboards.get_admin_cancel())
+
+        if text == "Изменить процент маржи для налички":
+            # Устанавливаем состояние в 'ожидание числа для изменения курса'
+            state[user_id] = 'ожидание числа для изменения маржи для налички'
+            # Запрашиваем число для изменения курса
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число для изменения процента маржи для налички (в процентах):", reply_markup=keyboards.get_admin_cancel())
                 
                 
         ##Для админов
         if text == "Узнать курс":
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс с Bitazza USDT/THB  : {course_THB} \n Курс Bitazza для пользователя (без маржи) : {user_course_THB} \nКурс Bitazza для пользователя (с маржой)  : {user_course_THB*marje} \n Курс rub для пользователей: {user_course_rub} \n Процент маржи : {round((marje*100),2)} % || {marje}")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс с Bitazza USDT/THB  : {admin_course_THB} \nКурс Bitazza для пользователя (с маржой)  : {user_course_THB*(2-marje)} \n Курс rub для пользователей (с маржой): {round(user_course_rub*float(marje),2)} \n Процент маржи для банкоа : {round((marje*100),2)} % || {marje} \nПроцент маржи для USDT: {round(float(usdt_marje)*100, 2)} % || {usdt_marje}  \nПроцент маржи Наличка: {round(float(cash_marje)*100, 2)} % || {cash_marje}")
             return
         ##Для админов
         if text == "Остановить переписку с юзером":
@@ -330,21 +394,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"С этим {username} не зарегистрирован чат")
             
 
-
-
-
-
     ### Для юзеров ###
     ##################
     if user_id not in ADMIN_ID:
     
         ### Для юзеров ###
         if text == "Узнать курс":
-            course_THB_RUB = round(((user_course_rub/user_course_THB)*marje),2)
+            
+            course_rub_marje = float(user_course_rub)*float(marje)
+            course_thb_marje = float(user_course_THB)*(2-float(marje))
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f'''🏷️
-Курс THB = {round(user_course_rub/user_course_THB,2)} RUB 🇷🇺
-Курс USDT = {user_course_THB} THB 🇹🇭 
+Курс THB = {round(float(course_rub_marje)/float(course_thb_marje),2)} RUB 🇷🇺
+Курс USDT = {round(float(course_thb_marje), 2)} THB 🇹🇭
 
 Чтобы точнее узнать курс выберите cумму, способ оплаты и нажмите разместить заказ, чтобы связаться с оператором ''', reply_markup=keyboards.get_user_base())
             return
@@ -400,16 +462,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ### Для юзеров ###
         ### После выбора суммы ждем когда пользователь выберет способ оплаты ###
         elif user_id in state and state[user_id] == 'ожидание выбора способа оплаты':
+
             if text in db.get_banks('rus'):
                 # Конвертация в баты
-                usdt, rub, crub = count_rub_marje(bat[user_id], text)            
+                usdt, rub, crub, course_rub, course_THB = count_rub_marje(bat[user_id], text, float(user_course_THB)*(2-float(marje)))            
+                if text == '🏧USDT':
+                    usdt = count_thb_usdt_user(bat[user_id])
+
                 average_rub_user[user_id] = crub
                 # Создание кнопки "Запросить"
                 request_button = InlineKeyboardButton('Разместить заказ и связаться с оператаром', callback_data="request")
+
+                txt = f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. ({usdt} USDT) 💰\nРасчет ведется по курсу ({text} {round(crub,2)}) {course_rub} руб. ({course_THB} бат за USDT) 📊' 
+
+                if text == '🏧USDT':
+                    txt += "\n(При выборе оплаты в USDT, расчет принимается только в USDT!!!)"
+
+
                 # Создание клавиатуры с кнопкой "Запросить"
                 keyboard = InlineKeyboardMarkup([[request_button]])
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. ({usdt} USDT) 💰\nРасчет ведется по курсу ({text}) {round(user_course_rub/user_course_THB, 2)} руб. ({user_course_THB} бат за USDT) 📊', reply_markup=keyboard)
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=txt, reply_markup=keyboard)
                 return
+            
             
             
             if text == 'Другая сумма':

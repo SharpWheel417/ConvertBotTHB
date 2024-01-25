@@ -37,7 +37,7 @@ def get_get():
 
 def get_by_trade_method(method, bat, course_THB, course_rub, marje):
     global trade_method
-    sum_rub = ((bat/course_THB)*course_rub)*marje
+    sum_rub = ((float(bat)/float(course_THB))*float(course_rub))*float(marje)
     x=0
     sum = 0
     average = 0

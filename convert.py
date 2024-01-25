@@ -17,7 +17,6 @@ def set_marje(new_course):
     global marje
     marje = (new_course/100)+1
 
-
 def parse_course():
     
     new_course_rub = commex.get_average()
