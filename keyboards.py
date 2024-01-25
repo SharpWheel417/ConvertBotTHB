@@ -33,7 +33,7 @@ def get_admin_base():
         )
 
 def get_admin_calculate():
-    return ReplyKeyboardMarkup([['Бат в руб', 'Бат в руб с маржой'], ['Бат в USDT', 'Бат в USDT с маржой'],['Рубль в бат', 'Рубль в бат с маржой'], ['Рубль в USDT', 'Рубль в USDT с маржой'],['USDT в бат', 'USDT в бат с маржой'],['USDT в рубль', 'USDT врубль с маржой']], resize_keyboard=False)
+    return ReplyKeyboardMarkup([['Бат в руб', 'Бат в руб с маржой'], ['Бат в USDT', 'Бат в USDT с маржой'],['Рубль в бат', 'Рубль в бат с маржой'], ['Рубль в USDT', 'Рубль в USDT с маржой'],['USDT в бат', 'USDT в бат с маржой'],['USDT в рубль', 'USDT в рубль с маржой']], resize_keyboard=False)
 
 def get_admin_stats():
     return ReplyKeyboardMarkup([['Выполненые', 'Выручка (руб)', 'Оценки', 'Всего пользователей'], ['Главное меню']], resize_keyboard=True)
@@ -43,7 +43,7 @@ def get_admin_orders():
     
 def get_admin_courses():
     return ReplyKeyboardMarkup(
-            [['Изменить курс рубля', 'Изменить курс USDT'], ["Изменить процент маржи для банков", 'Изменить процент маржи для USDT', 'Изменить процент маржи для налички'], ['Главное меню']],
+            [['Изменить курс рубля', 'Изменить курс Bitazza'], ["Изменить процент маржи для банков", 'Изменить процент маржи для USDT', 'Изменить процент маржи для налички'], ['Главное меню']],
             resize_keyboard=True)
 
 def get_user_complete():

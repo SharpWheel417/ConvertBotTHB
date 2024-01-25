@@ -6,7 +6,7 @@ import uuid
 
 import convert, commex, db, regexes, geo, keyboards, bitazza, calc
 
-BOT_TOKEN = '5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM'
+BOT_TOKEN = '6472860227:AAEQ3j-L8X9w_fQuSBprXt7PZ_-HyUW_AnU'
 #battle-life = 5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM
 #tabletka = 6472860227:AAEQ3j-L8X9w_fQuSBprXt7PZ_-HyUW_AnU
 ADMIN_ID = [1194700554, 6920037183]
@@ -58,7 +58,7 @@ def parse_course(update: bool):
 
     print(course_THB)
     
-parse_course(True)
+# parse_course(True)
 
 schedule.every(1).hours.do(parse_course)
 
@@ -72,7 +72,7 @@ logging.basicConfig(
 
 def count_thb_usdt_user(bat):
     global user_course_THB, usdt_marje
-    return round(float((float(bat)/(float(user_course_THB)*(2-usdt_marje)))),2)
+    return round(float((float(bat)/(float(round(user_course_THB, 2))*(2-usdt_marje)))),2)
 
 def count_rub_marje(bat: int, trade: str, thb_course): 
     global marje, course_rub, user_course_rub, user_course_THB, cash_marje
@@ -172,7 +172,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ### Обычное сообщение ####
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    global user_course_THB, course_THB, user_course_rub, course_rub, usdt_marje, cash_marje, marje
+    global user_course_THB, course_THB, user_course_rub, course_rub, usdt_marje, cash_marje, marje, admin_course_rub, admin_course_THB
     
     text = update.message.text
     global selected_user_id
@@ -187,7 +187,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         ### КАЛЬКУЛЯТОР ###
         if text == 'Калькулятор':
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="Заказы:", reply_markup=keyboards.get_admin_calculate())
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Калькулятор:", reply_markup=keyboards.get_admin_calculate())
 
 
         # admin panel
@@ -296,12 +296,171 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             try:
                 # Выполняем действия для изменения курса
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_bath_to_usdt_marje(float(text), user_course_THB, marje)}", reply_markup=keyboards.get_admin_base())
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_rub_to_bat(float(text), admin_course_THB, admin_course_rub)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
                 del state[user_id]
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
+
+        if text == "Рубль в бат с маржой":
+            # Устанавливаем состояние в 'ожидание числа для изменения курса'
+            state[user_id] = 'рубль в бат с маржой'
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
+
+        elif user_id in state and state[user_id] == 'рубль в бат с маржой':
+            if text == "Отмена":
+                # Сбрасываем состояние
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
+                del state[user_id]
+                return
+            
+            try:
+                # Выполняем действия для изменения курса
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_rub_to_bat_marje(float(text), user_course_THB, user_course_rub, marje)}", reply_markup=keyboards.get_admin_base())
+                # Сбрасываем состояние
+                del state[user_id]
+
+            except ValueError:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
+
+        if text == "Рубль в USDT":
+            # Устанавливаем состояние в 'ожидание числа для изменения курса'
+            state[user_id] = 'рубль в usdt'
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
+
+        elif user_id in state and state[user_id] == 'рубль в usdt':
+            if text == "Отмена":
+                # Сбрасываем состояние
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
+                del state[user_id]
+                return
+            
+            try:
+                # Выполняем действия для изменения курса
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_rub_to_usdt(float(text), admin_course_rub)}", reply_markup=keyboards.get_admin_base())
+                # Сбрасываем состояние
+                del state[user_id]
+
+            except ValueError:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
+        
+
+        if text == "Рубль в USDT с маржой":
+            # Устанавливаем состояние в 'ожидание числа для изменения курса'
+            state[user_id] = 'рубль в usdt с маржой'
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
+
+        elif user_id in state and state[user_id] == 'рубль в usdt с маржой':
+            if text == "Отмена":
+                # Сбрасываем состояние
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
+                del state[user_id]
+                return
+            
+            try:
+                # Выполняем действия для изменения курса
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_rub_to_usdt_marje(float(text), user_course_rub, marje)}", reply_markup=keyboards.get_admin_base())
+                # Сбрасываем состояние
+                del state[user_id]
+
+            except ValueError:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
+
+        if text == "USDT в бат":
+            # Устанавливаем состояние в 'ожидание числа для изменения курса'
+            state[user_id] = 'usdt в бат'
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
+
+        elif user_id in state and state[user_id] == 'usdt в бат':
+            if text == "Отмена":
+                # Сбрасываем состояние
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
+                del state[user_id]
+                return
+            
+            try:
+                # Выполняем действия для изменения курса
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_usdt_to_bat(float(text), admin_course_THB)}", reply_markup=keyboards.get_admin_base())
+                # Сбрасываем состояние
+                del state[user_id]
+
+            except ValueError:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
+
+        
+        if text == "USDT в бат с маржой":
+            # Устанавливаем состояние в 'ожидание числа для изменения курса'
+            state[user_id] = 'usdt в бат с маржой'
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
+
+        elif user_id in state and state[user_id] == 'usdt в бат с маржой':
+            if text == "Отмена":
+                # Сбрасываем состояние
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
+                del state[user_id]
+                return
+            
+            try:
+                # Выполняем действия для изменения курса
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_usdt_to_bat_marje(float(text), user_course_THB, marje)}", reply_markup=keyboards.get_admin_base())
+                # Сбрасываем состояние
+                del state[user_id]
+
+            except ValueError:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
+
+
+        if text == "USDT в рубль":
+            # Устанавливаем состояние в 'ожидание числа для изменения курса'
+            state[user_id] = 'usdt в рубль'
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
+
+        elif user_id in state and state[user_id] == 'usdt в рубль':
+            if text == "Отмена":
+                # Сбрасываем состояние
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
+                del state[user_id]
+                return
+            
+            try:
+                # Выполняем действия для изменения курса
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_usdt_to_rub(float(text), admin_course_rub)}", reply_markup=keyboards.get_admin_base())
+                # Сбрасываем состояние
+                del state[user_id]
+
+            except ValueError:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
+
+
+        if text == "USDT в рубль с маржой":
+            # Устанавливаем состояние в 'ожидание числа для изменения курса'
+            state[user_id] = 'usdt в рубль с маржой'
+
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
+
+        elif user_id in state and state[user_id] == 'usdt в рубль с маржой':
+            if text == "Отмена":
+                # Сбрасываем состояние
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
+                del state[user_id]
+                return
+            
+            try:
+                # Выполняем действия для изменения курса
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_usdt_to_rub_marje(float(text), user_course_rub, marje)}", reply_markup=keyboards.get_admin_base())
+                # Сбрасываем состояние
+                del state[user_id]
+
+            except ValueError:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
+
         
 
 
@@ -416,7 +575,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
             
             try:
-                convert.set_course(float(text))
+                user_course_rub = float(text)
+                admin_course_rub = float(text)
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Курс изменен", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
@@ -426,7 +586,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число для изменения курса.")
                 
 
-        if text == "Изменить курс USDT":
+        if text == "Изменить курс Bitazza":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
             state[user_id] = 'ожидание числа для изменения курса usdt'
             # Запрашиваем число для изменения курса
@@ -440,7 +600,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
             
             try:
-                convert.set_course_usdt(float(text))
+                user_course_THB = float(text)
+                admin_course_THB = float(text)
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Курс изменен", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
@@ -611,7 +772,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 txt = f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. ({usdt} USDT) 💰\nРасчет ведется по курсу ({text} {round(crub,2)}) {course_rub} руб. ({course_THB} бат за USDT) 📊' 
 
                 if text == '🟩 USDT':
-                    txt += "\n(При выборе оплаты в USDT, расчет принимается только в USDT!!!)"
+                    txt += "\n*При выборе оплаты в USDT, расчет принимается только в USDT"
 
 
                 # Создание клавиатуры с кнопкой "Запросить"
