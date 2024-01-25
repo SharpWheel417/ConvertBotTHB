@@ -6,10 +6,11 @@ import uuid
 
 import convert, commex, db, regexes, geo, keyboards, bitazza, calc
 
-BOT_TOKEN = '6472860227:AAEQ3j-L8X9w_fQuSBprXt7PZ_-HyUW_AnU'
+BOT_TOKEN = '5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM'
+#Exchange = '6926623911:AAG-WlokHZOD2_Bc3AroHkpQd_BQftOfXcQ'
 #battle-life = 5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM
 #tabletka = 6472860227:AAEQ3j-L8X9w_fQuSBprXt7PZ_-HyUW_AnU
-ADMIN_ID = [1194700554]
+ADMIN_ID = [1194700554, 6920037183]
 CHANEL_ID = 'channel4exchange_thai'
 #I = 1194700554
 # Exchange Admin = 6920037183
@@ -19,9 +20,9 @@ bat = {}
 average_rub_user = {}
 complete = {}
 marje = None
-marje = 1.025
+marje = 1.03
 usdt_marje = 1.03
-cash_marje = 1.05
+cash_marje = 1.09
 
 # user_course_THB = 100
 user_course_THB = 35.6
