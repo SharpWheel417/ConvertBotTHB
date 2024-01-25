@@ -59,7 +59,7 @@ def parse_course(update: bool):
 
     print(course_THB)
     
-# parse_course(True)
+parse_course(True)
 
 schedule.every(1).hours.do(parse_course)
 
