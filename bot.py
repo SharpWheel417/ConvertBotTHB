@@ -6,10 +6,10 @@ import uuid
 
 import convert, commex, db, regexes, geo, keyboards, bitazza, calc
 
-BOT_TOKEN = '5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM'
+BOT_TOKEN = '6472860227:AAEQ3j-L8X9w_fQuSBprXt7PZ_-HyUW_AnU'
 #battle-life = 5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM
 #tabletka = 6472860227:AAEQ3j-L8X9w_fQuSBprXt7PZ_-HyUW_AnU
-ADMIN_ID = [1194700554, 6920037183]
+ADMIN_ID = [1194700554]
 CHANEL_ID = 'channel4exchange_thai'
 #I = 1194700554
 # Exchange Admin = 6920037183
@@ -58,7 +58,7 @@ def parse_course(update: bool):
 
     print(course_THB)
     
-parse_course(True)
+# parse_course(True)
 
 schedule.every(1).hours.do(parse_course)
 
@@ -769,7 +769,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Создание кнопки "Запросить"
                 request_button = InlineKeyboardButton('Разместить заказ и связаться с оператаром', callback_data="request")
 
-                txt = f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. ({usdt} USDT) 💰\nРасчет ведется по курсу ({text} {round(crub,2)}) {course_rub} руб. ({course_THB} бат за USDT) 📊' 
+                txt = f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. или {usdt} USD 💰\nРасчет ведется по курсу ({text} {round(crub,2)}) {course_rub} руб. ({course_THB} бат за USDT) 📊' 
 
                 if text == '🟩 USDT':
                     txt += "\n*При выборе оплаты в USDT, расчет принимается только в USDT"
