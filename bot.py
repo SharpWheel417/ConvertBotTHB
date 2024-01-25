@@ -6,7 +6,7 @@ import uuid
 
 import convert, commex, db, regexes, geo, keyboards, bitazza, calc
 
-BOT_TOKEN = '6472860227:AAEQ3j-L8X9w_fQuSBprXt7PZ_-HyUW_AnU'
+BOT_TOKEN = '5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM'
 #battle-life = 5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM
 #tabletka = 6472860227:AAEQ3j-L8X9w_fQuSBprXt7PZ_-HyUW_AnU
 ADMIN_ID = [1194700554, 6920037183]
@@ -58,7 +58,6 @@ def parse_course(update: bool):
 
     print(course_THB)
     
-
 parse_course(True)
 
 schedule.every(1).hours.do(parse_course)
