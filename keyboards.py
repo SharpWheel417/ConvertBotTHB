@@ -11,7 +11,7 @@ def get_banks():
         cleaned_i2 = banks[i + 1] if i + 1 < len(banks) else []
         keyboard_buttons.append([cleaned_i1, cleaned_i2])
 
-    keyboard_buttons.append(['Другая сумма'])
+    keyboard_buttons.append(['🟰 Выбрать сумму'])
 
     return keyboard_buttons
 
@@ -28,9 +28,12 @@ def get_admin_cancel():
 
 def get_admin_base():
     return ReplyKeyboardMarkup(
-            [['Изменить курс', 'Заказы'], ['Узнать курс', 'Статистика'], ['Остановить переписку с юзером']],
+            [['Изменить курс', 'Заказы'], ['Узнать курс', 'Статистика'], ['Калькулятор'],['Остановить переписку с юзером']],
             resize_keyboard=True
         )
+
+def get_admin_calculate():
+    return ReplyKeyboardMarkup([['Бат в руб', 'Бат в руб с маржой'], ['Бат в USDT', 'Бат в USDT с маржой'],['Рубль в бат', 'Рубль в бат с маржой'], ['Рубль в USDT', 'Рубль в USDT с маржой'],['USDT в бат', 'USDT в бат с маржой'],['USDT в рубль', 'USDT врубль с маржой']], resize_keyboard=False)
 
 def get_admin_stats():
     return ReplyKeyboardMarkup([['Выполненые', 'Выручка (руб)', 'Оценки', 'Всего пользователей'], ['Главное меню']], resize_keyboard=True)
@@ -44,7 +47,7 @@ def get_admin_courses():
             resize_keyboard=True)
 
 def get_user_complete():
-    return ReplyKeyboardMarkup([['Оставить отзыв'], ['Поставить оценку'], ['Выбрать сумму']], resize_keyboard=True)
+    return ReplyKeyboardMarkup([['Поставить оценку'], ['Выбрать сумму']], resize_keyboard=True)
 
 def get_user_marks():
     return ReplyKeyboardMarkup([['1', '2', '3', '4', '5']], resize_keyboard=True)
