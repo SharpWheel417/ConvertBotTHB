@@ -2,18 +2,15 @@ from telegram import Bot, Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, Inl
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, CallbackQueryHandler, CallbackContext
 import schedule, time, re, tracemalloc, logging
 tracemalloc.start()
-import uuid
+import uuid, threading
 
 import convert, commex, db, regexes, geo, keyboards, bitazza, calc
+from config import Exchange
 
-BOT_TOKEN = '5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM'
-#Exchange = '6926623911:AAG-WlokHZOD2_Bc3AroHkpQd_BQftOfXcQ'
-#battle-life = 5921193873:AAFtVwAzegmN6G9USoetSEVV7NoSW-BFJRM
-#tabletka = 6472860227:AAEQ3j-L8X9w_fQuSBprXt7PZ_-HyUW_AnU
+BOT_TOKEN = Exchange
+
 ADMIN_ID = [1194700554, 6920037183]
 CHANEL_ID = 'channel4exchange_thai'
-#I = 1194700554
-# Exchange Admin = 6920037183
 
 state = {}
 bat = {}
@@ -59,9 +56,24 @@ def parse_course(update: bool):
 
     print(course_THB)
     
-parse_course(True)
 
 schedule.every(1).hours.do(parse_course)
+def run_scheduler():
+    # Запуск функции parse_course сразу
+    parse_course(True)
+
+    # Запуск шедулера каждый час
+    schedule.every(30).hours.do(parse_course)
+    # Запуск задачи job каждые 10 секунд для демонстрации работы шедулера
+
+    # Бесконечный цикл для запуска шедулера
+    while True:
+        schedule.run_pending()
+        time.sleep(10)
+
+# Создание и запуск потока для шедулера
+scheduler_thread = threading.Thread(target=run_scheduler)
+scheduler_thread.start()
 
 selected_user_id = None
 
@@ -979,6 +991,3 @@ if __name__ == '__main__':
 
     application.run_polling()
 
-while True:
-    schedule.run_pending()
-    time.sleep(10)
