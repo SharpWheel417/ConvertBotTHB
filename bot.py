@@ -5,9 +5,9 @@ tracemalloc.start()
 import uuid, threading
 
 import convert, commex, db, regexes, geo, keyboards, bitazza, calc
-from config import Exchange
+from config import battle_life
 
-BOT_TOKEN = Exchange
+BOT_TOKEN = battle_life
 
 ADMIN_ID = [1194700554, 6920037183]
 CHANEL_ID = 'channel4exchange_thai'
@@ -42,7 +42,7 @@ def parse_course(update: bool):
 
     new_course_THB = bitazza.get_currency()
     if new_course_THB == 'error':
-        raise Exception('Failed to get THB course from Bitazza')
+        return
     global user_course_THB, admin_course_THB
     if update is False:
         if(float(new_course_THB)<course_THB):
@@ -55,21 +55,27 @@ def parse_course(update: bool):
         course_THB = new_course_THB
 
     print(course_THB)
+
+
+thread_parse = threading.Thread(target=parse_course(True))
+thread_parse.start()
     
+lock = threading.Lock()
 
-schedule.every(1).hours.do(parse_course)
 def run_scheduler():
-    # Запуск функции parse_course сразу
-    parse_course(True)
-
     # Запуск шедулера каждый час
-    schedule.every(30).hours.do(parse_course)
-    # Запуск задачи job каждые 10 секунд для демонстрации работы шедулера
+    schedule.every(1).hour.do(lambda: run_with_lock(parse_course, False))
+
+    schedule.every().day.at('10:00').do(lambda: run_with_lock(parse_course, True))
 
     # Бесконечный цикл для запуска шедулера
     while True:
         schedule.run_pending()
         time.sleep(10)
+
+def run_with_lock(func, arg):
+    with lock:
+        func(arg)
 
 # Создание и запуск потока для шедулера
 scheduler_thread = threading.Thread(target=run_scheduler)
