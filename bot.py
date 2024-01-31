@@ -45,7 +45,7 @@ def parse_course(update: bool):
         return
     global user_course_THB, admin_course_THB
     if update is False:
-        if(float(new_course_THB)<course_THB):
+        if(float(new_course_THB)<user_course_THB):
             user_course_THB = new_course_THB
         admin_course_THB = new_course_THB
         course_THB = new_course_THB
