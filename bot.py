@@ -45,7 +45,7 @@ def parse_course(update: bool):
         return
     global user_course_THB, admin_course_THB
     if update is False:
-        if(float(new_course_THB)<course_THB):
+        if(float(new_course_THB)<user_course_THB):
             user_course_THB = new_course_THB
         admin_course_THB = new_course_THB
         course_THB = new_course_THB
@@ -699,7 +699,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
         ##Для админов
         if text == "Узнать курс":
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс с Bitazza USDT/THB  : {admin_course_THB} \nКурс Bitazza для пользователя (с маржой)  : {user_course_THB*(2-marje)} \n Курс rub для пользователей (с маржой): {round(user_course_rub*float(marje),2)} \n Процент маржи для банкоа : {round((marje*100),2)} % || {marje} \nПроцент маржи для USDT: {round(float(usdt_marje)*100, 2)} % || {usdt_marje}  \nПроцент маржи Наличка: {round(float(cash_marje)*100, 2)} % || {cash_marje}")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс с Bitazza USDT/THB  : {admin_course_THB} \nКурс Bitazza для пользователя: {user_course_THB} \nКурс Bitazza с процентом (0.02): {admin_course_THB*(2-0.02)} \nКурс Bitazza для пользователя (с маржой)  : {user_course_THB*(2-marje)} \nКурс rub для пользователей: {user_course_rub} \nКурс rub для пользователей (с маржой): {round(user_course_rub*float(marje),2)} \n Процент маржи для банкоа : {round((marje*100),2)} % || {marje} \nПроцент маржи для USDT: {round(float(usdt_marje)*100, 2)} % || {usdt_marje}  \nПроцент маржи Наличка: {round(float(cash_marje)*100, 2)} % || {cash_marje}")
             return
         ##Для админов
         if text == "Остановить переписку с юзером":
@@ -940,7 +940,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         
 Зарабатываем с этого: {round(gain_bat,2)} бат или {round(gain,2)} руб или {round(gain_usdt, 2)} USDT
         
-Bitazza: {admin_course_THB}
+Bitazza для админа: {admin_course_THB}
         
 Самый выгодный способ платежа: {best_trade} {best_course} руб/USDT, {round(best_course/admin_course_THB, 2)} руб/ТНВ'''
 

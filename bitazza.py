@@ -11,7 +11,7 @@ def get_currency() -> str:
 
     try:
         # Создаем экземпляр WebDriver с использованием Chrome
-        chrome_options = Options()
+        # chrome_options = Options()
         # chrome_options.add_argument('--headless')
         # chrome_options.add_argument('--no-sandbox')
         # chrome_options.add_argument('--disable-dev-shm-usage')
@@ -53,5 +53,5 @@ def get_currency() -> str:
         print(f"An error occurred: {e}")
         return 'error'
 
-print(get_currency())
+# print(get_currency())
 
