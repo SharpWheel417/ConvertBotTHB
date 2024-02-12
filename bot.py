@@ -3,11 +3,12 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 import schedule, time, re, tracemalloc, logging
 tracemalloc.start()
 import uuid, threading
+from datetime import datetime 
 
 import convert, commex, db, regexes, geo, keyboards, bitazza, calc
-from config import battle_life
+from config import Exchange
 
-BOT_TOKEN = battle_life
+BOT_TOKEN = Exchange
 
 ADMIN_ID = [1194700554, 6920037183]
 CHANEL_ID = 'channel4exchange_thai'
@@ -32,12 +33,16 @@ course_THB = 35.6
 course_rub = 91.1
 
 
+file_name = "course_THB_data.txt"
+
+
 def parse_course(update: bool):
     
     new_course_rub = commex.get_average()
-    global course_rub, course_THB
-    if (new_course_rub>course_rub):
-            course_rub = new_course_rub
+    global course_rub, course_THB, admin_course_rub, user_course_rub
+    admin_course_rub = new_course_rub
+    user_course_rub = new_course_rub
+    course_rub = new_course_rub
     print("Average:", course_rub)
 
     new_course_THB = bitazza.get_currency()
@@ -54,6 +59,12 @@ def parse_course(update: bool):
         admin_course_THB = new_course_THB
         course_THB = new_course_THB
 
+    ###Запись логов в файл
+    file = open(file_name, 'a')
+    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    file.write(f"Date: {current_date}, course_THB: {course_THB}, admin_course_THB: {admin_course_THB}, user_course_THB: {user_course_THB}, course_THB: {course_THB}\n admin_course_rub: {admin_course_rub}, user_course_THB: {user_course_rub}\n")
+    print("Данные успешно записаны в файл:", file_name)
+    file.close()
     print(course_THB)
 
 
@@ -162,12 +173,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global user_course_rub, user_course_THB
     user_id = update.effective_user.id
     username = update.effective_user.username
+    user_first_name = update.effective_user.first_name 
 
     if user_id in state:
         del(state[user_id])
 
-    if not db.check_user_exists(user_id):
-        db.add_new_user(user_id, username)
+    
+    db.add_new_user(user_id, username, user_first_name)
 
     ### Админ ###
     if user_id in ADMIN_ID:
@@ -699,7 +711,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 
         ##Для админов
         if text == "Узнать курс":
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс с Bitazza USDT/THB  : {admin_course_THB} \nКурс Bitazza для пользователя: {user_course_THB} \nКурс Bitazza с процентом (0.02): {admin_course_THB*(2-0.02)} \nКурс Bitazza для пользователя (с маржой)  : {user_course_THB*(2-marje)} \nКурс rub для пользователей: {user_course_rub} \nКурс rub для пользователей (с маржой): {round(user_course_rub*float(marje),2)} \n Процент маржи для банкоа : {round((marje*100),2)} % || {marje} \nПроцент маржи для USDT: {round(float(usdt_marje)*100, 2)} % || {usdt_marje}  \nПроцент маржи Наличка: {round(float(cash_marje)*100, 2)} % || {cash_marje}")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс с Bitazza USDT/THB  : {admin_course_THB} \nКурс Bitazza минимальный за день: {user_course_THB} \nКурс Bitazza с процентом (0.02): {admin_course_THB*(2-0.02)} \nКурс Bitazza для пользователя (с маржой)  : {user_course_THB*(2-marje)} \n\nКурс рубля к бату: {round(admin_course_rub/admin_course_THB,2)}\n\nКурс rub для пользователей: {user_course_rub} \nКурс rub для пользователей (с маржой): {round(user_course_rub*float(marje),2)} \n Процент маржи для банкоа : {round((marje*100),2)} % || {marje} \nПроцент маржи для USDT: {round(float(usdt_marje)*100, 2)} % || {usdt_marje}  \nПроцент маржи Наличка: {round(float(cash_marje)*100, 2)} % || {cash_marje}")
             return
         ##Для админов
         if text == "Остановить переписку с юзером":
@@ -788,10 +800,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Создание кнопки "Запросить"
                 request_button = InlineKeyboardButton('Разместить заказ и связаться с оператаром', callback_data="request")
 
-                txt = f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. или {usdt} USD 💰\nРасчет ведется по курсу ({text} {round(crub,2)}) {course_rub} руб. ({course_THB} бат за USDT) 📊' 
+                txt = f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. или {usdt} USDT 💰\nРасчет ведется по курсу ({text} {round(crub,2)}) {course_rub} руб. ({course_THB} бат за USDT) 📊'
+
+                if text == '💵 Наличные':
+                    txt = f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. или {usdt} USD 💰\nРасчет ведется по курсу ({text} {round(crub,2)}) {course_rub} руб. ({course_THB} бат за USDT) 📊'
 
                 if text == '🟩 USDT':
                     txt += "\n*При выборе оплаты в USDT, расчет принимается только в USDT"
+                
 
 
                 # Создание клавиатуры с кнопкой "Запросить"
@@ -859,7 +875,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         chat_id = db.get_chat_id(username)
 
         ## Отправляем сообщение пользователю
-        await context.bot.send_message(chat_id=chat_id, text=f'💬 Ваш заказ взят в работу\nДалее диалог ведет оператор @operator4exchange \nВаш ID заказа: {order_id}')
+        await context.bot.send_message(chat_id=chat_id, text=f'💬 Ваш заказ взят в работу\nДалее диалог ведет оператор @operator4exchange \nВаш ID заказа: {order_id}\nЕсли вы закрыли сообщения для других пользователей или у вас нет username (@username), то напишите нашему оператору сами')
 
         db.set_progress(order_id)
 
@@ -905,7 +921,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         keyboard = ReplyKeyboardMarkup([[share_location_button], [no_button], [select_amount_button]], resize_keyboard=True)
 
         # Отправляем запрос на получение бат
-        await context.bot.send_message(chat_id=query.message.chat_id, text="✅ Ваш заказ размещен \n🧑‍💻 Оператор @operator4exchange скоро свяжется с вами \nА пока можете посмотреть, где ближайшие банкомат или просто сообщить курьеру где вы находитесь, отправив свое текущее местоположение 🌎", reply_markup=keyboard)
+        await context.bot.send_message(chat_id=query.message.chat_id, text="✅ Ваш заказ размещен \n🧑‍💻 Оператор @operator4exchange скоро свяжется с вами \nА пока можете посмотреть, где ближайшие банкомат или просто сообщить курьеру где вы находитесь, отправив свое текущее местоположение 🌎\n\nЕсли вы закрыли сообщения для других пользователей или у вас нет username (@username), то напишите нашему оператору сами", reply_markup=keyboard)
 
         ## Парсим из текста запроса пользоавтеля нужные данные
         bat, rub, usdt, rub_thb, thb_usdt, trade_method = regexes.user_request(query.message.text)
