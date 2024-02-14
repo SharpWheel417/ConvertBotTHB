@@ -6,6 +6,7 @@ def user_request(string):
     баты, рубли, usdt, курс и личный курс пользователя
     '''
 
+    ##бат
     bat = re.search(r'(\d+(?:\.\d+)?) бат', string).group(1)
     rub = re.search(r'(\d+(?:\.\d+)?) руб', string).group(1)
     usdt = re.search(r'(\d+(?:\.\d+)?) USD', string).group(1)
