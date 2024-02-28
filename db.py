@@ -23,7 +23,7 @@ class Orders:
         self.completed = completed
         self.review = review
         self.rating = rating
-    
+
 def check_user_exists(chat_id) -> bool:
     'Проверяем наличие пользователя в бд r: true/false'
     q = "SELECT * FROM users WHERE chat_id = '%s'"
@@ -61,7 +61,7 @@ def get_chat_id(name: str) -> str:
         return result[0]
     else:
         return None
-    
+
 def find_name(chat_id) -> str:
     'Поиск имени пользователя по chat_id'
     cur.execute("SELECT name FROM users WHERE chat_id = '%s'", (chat_id,))
@@ -70,7 +70,7 @@ def find_name(chat_id) -> str:
         return result[0]
     else:
         return None
-    
+
 def request_on(chat_id) -> None:
     cur.execute("UPDATE users SET request = TRUE WHERE chat_id = '%s'", (chat_id,))
     conn.commit()
@@ -96,7 +96,7 @@ def get_logo_text():
         return result[0]
     else:
         return None
-    
+
 def get_info_text():
     'Получаем приветсвенный текст из БД'
     cur.execute("SELECT text FROM state_data WHERE type='info'")
@@ -105,7 +105,7 @@ def get_info_text():
         return result[0]
     else:
         return None
-    
+
 def get_review_link():
     'Получаем строку из бд ("Summer_Death")'
     cur.execute("SELECT text FROM state_data WHERE type='review_link'")
@@ -114,7 +114,7 @@ def get_review_link():
         return result[0]
     else:
         return None
-    
+
 def get_banks(language: str):
     '''
     language: 'rus' or 'eng'
@@ -153,7 +153,7 @@ def check_order_id(id:str):
         return True
     else:
         return False
-    
+
 
 def set_progress(ids: str):
     cur.execute("UPDATE orders SET completed = 'progress' WHERE ids = %s", (ids,))
@@ -197,7 +197,7 @@ def get_orders_cancle():
 
 def get_ready():
     cur.execute("SELECT count(*) FROM orders WHERE completed = 'complete'")
-    count = cur.fetchone()[0] 
+    count = cur.fetchone()[0]
     return count
 
 def get_revenue():
@@ -214,3 +214,32 @@ def get_count_users():
     cur.execute("SELECT count(*) FROM users")
     result = cur.fetchone()[0]
     return result
+
+def get_state(chat_id):
+    q=f"SELECT state FROM user_state WHERE chat_id = '{chat_id}'"
+    print(q)
+    cur.execute(f"SELECT state FROM user_state WHERE chat_id = '{chat_id}'")
+    result = cur.fetchone()
+    if result:
+        return result[0].replace(" ","")
+    else:
+        return None
+
+def set_state(chat_id, state):
+    q = f"INSERT INTO user_state (state, chat_id) VALUES ('{state}', '{chat_id}') ON CONFLICT (chat_id) DO UPDATE SET state = '{state}'"
+    print(q)
+    cur.execute(q)
+    conn.commit()
+
+def set_bats(chat_id, bats):
+    q = f"INSERT INTO user_state (bat, chat_id) VALUES ('{bats}', '{chat_id}') ON CONFLICT (chat_id) DO UPDATE SET bat = '{bats}'"
+    print(q)
+    cur.execute(q)
+
+def get_bats(chat_id):
+    cur.execute(f"SELECT bat FROM user_state WHERE chat_id = '{chat_id}'")
+    result = cur.fetchone()
+    if result:
+        return result[0].replace(" ","")
+    else:
+        return None

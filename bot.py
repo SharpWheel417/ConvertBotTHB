@@ -5,15 +5,14 @@ tracemalloc.start()
 import uuid, threading
 from datetime import datetime
 
-import convert, commex, db, regexes, geo, keyboards, bitazza, calc
-from config import Exchange
+import convert, commex, db, regexes, geo, keyboards, bitazza, calc, example
+from config import battle_life
 
-BOT_TOKEN = Exchange
+BOT_TOKEN = battle_life
 
 ADMIN_ID = [1194700554, 6920037183]
 CHANEL_ID = 'channel4exchange_thai'
 
-state = {}
 bat = {}
 average_rub_user = {}
 complete = {}
@@ -68,8 +67,8 @@ def parse_course(update: bool):
     print(course_THB)
 
 
-thread_parse = threading.Thread(target=parse_course(True))
-thread_parse.start()
+# thread_parse = threading.Thread(target=parse_course(True))
+# thread_parse.start()
 
 lock = threading.Lock()
 
@@ -127,7 +126,7 @@ def count_rub_marje(bat: int, trade: str, thb_course):
     if course_ruble == 'error' or course_ruble == 0 or course_ruble is None:
         course_ruble = course_rub
 
-    usdt = (bat / round(user_course_THB*(2-local_marje),2))
+    usdt = (float(bat) / round(user_course_THB*(2-local_marje),2))
 
     ## Курс Баты к Рублю
     thb_rub = round((course_ruble*local_marje)/(user_course_THB*(2-local_marje)),2)
@@ -135,7 +134,7 @@ def count_rub_marje(bat: int, trade: str, thb_course):
     cruble = round((course_ruble*local_marje), 2)
 
     c_rub = round(float(cruble)/round(user_course_THB*(2-local_marje),2),2)
-    rub = bat * c_rub
+    rub = float(bat) * float(c_rub)
 
 
     ##курс баты с маржой
@@ -175,11 +174,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     username = update.effective_user.username
     user_first_name = update.effective_user.first_name
 
-    if user_id in state:
-        del(state[user_id])
-
-
     db.add_new_user(user_id, username, user_first_name)
+
+    db.set_state(user_id, '0')
+    db.set_bats(user_id, '0')
 
     ### Админ ###
     if user_id in ADMIN_ID:
@@ -224,44 +222,44 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # admin panel
         if text == "Бат в руб":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'бат в руб'
+            db.set_state(user_id, 'бат в руб')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'бат в руб':
+        elif db.get_state(user_id) == 'бат в руб':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_bath_to_rub(float(text), admin_course_rub, admin_course_THB)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
 
         if text == "Бат в руб с маржой":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'бат в руб с маржой'
+            db.set_state(user_id, 'бат в руб с маржой')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'бат в руб с маржой':
+        elif db.get_state(user_id) == 'бат в руб с маржой':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_bath_to_rub_marje(float(text), user_course_rub, user_course_THB, marje)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
@@ -270,110 +268,110 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if text == "Бат в USDT":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'бат в usdt'
+            db.set_state(user_id, 'бат в usdt')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'бат в usdt':
+        elif db.get_state(user_id) == 'бат в usdt':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_bath_to_usdt(float(text), admin_course_THB)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
 
         if text == "Бат в USDT с маржой":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'бат в usdt с маржой'
+            db.set_state(user_id, 'бат в usdt с маржой')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'бат в usdt с маржой':
+        elif db.get_state(user_id) == 'бат в usdt с маржой':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_bath_to_usdt_marje(float(text), user_course_THB, marje)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
 
         if text == "Рубль в бат":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'рубль в бат'
+            db.set_state(user_id, 'рубль в бат')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'рубль в бат':
+        elif db.get_state(user_id) == 'рубль в бат':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_rub_to_bat(float(text), admin_course_THB, admin_course_rub)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
 
         if text == "Рубль в бат с маржой":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'рубль в бат с маржой'
+            db.set_state(user_id, 'рубль в бат с маржой')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'рубль в бат с маржой':
+        elif db.get_state(user_id) == 'рубль в бат с маржой':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_rub_to_bat_marje(float(text), user_course_THB, user_course_rub, marje)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
 
         if text == "Рубль в USDT":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'рубль в usdt'
+            db.set_state(user_id, 'рубль в usdt')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'рубль в usdt':
+        elif db.set_state(user_id) == 'рубль в usdt':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_rub_to_usdt(float(text), admin_course_rub)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
@@ -381,44 +379,44 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if text == "Рубль в USDT с маржой":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'рубль в usdt с маржой'
+            db.set_state(user_id, 'рубль в usdt с маржой')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'рубль в usdt с маржой':
+        elif db.get_state(user_id) == 'рубль в usdt с маржой':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_rub_to_usdt_marje(float(text), user_course_rub, marje)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
 
         if text == "USDT в бат":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'usdt в бат'
+            db.set_state(user_id, 'usdt в бат')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'usdt в бат':
+        elif db.get_state(user_id) == 'usdt в бат':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_usdt_to_bat(float(text), admin_course_THB)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
@@ -426,22 +424,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if text == "USDT в бат с маржой":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'usdt в бат с маржой'
+            db.set_state(user_id, 'usdt в бат с маржой')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'usdt в бат с маржой':
+        elif db.get_state(user_id) == 'usdt в бат с маржой':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_usdt_to_bat_marje(float(text), user_course_THB, marje)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
@@ -449,22 +447,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if text == "USDT в рубль":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'usdt в рубль'
+            db.set_state(user_id, 'usdt в рубль')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'usdt в рубль':
+        elif db.get_state(user_id) == 'usdt в рубль':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_usdt_to_rub(float(text), admin_course_rub)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
@@ -472,22 +470,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if text == "USDT в рубль с маржой":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'usdt в рубль с маржой'
+            db.set_state(user_id, 'usdt в рубль с маржой')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'usdt в рубль с маржой':
+        elif db.get_state(user_id) == 'usdt в рубль с маржой':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Отмена", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{calc.get_usdt_to_rub_marje(float(text), user_course_rub, marje)}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число.")
@@ -594,15 +592,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # admin panel
         if text == "Изменить курс рубля":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'ожидание числа для изменения курса рубля'
+            db.set_state(user_id, 'ожидание числа для изменения курса рубля')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число для изменения курса рубля (в рублях):", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'ожидание числа для изменения курса рубля':
+        elif db.get_state(user_id) == 'ожидание числа для изменения курса рубля':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс для пользователей не изменен, по прежнему РУБ: {user_course_rub} руб.", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
@@ -611,7 +609,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Курс изменен", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число для изменения курса.")
@@ -619,15 +617,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if text == "Изменить курс Bitazza":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'ожидание числа для изменения курса usdt'
+            db.set_state(user_id, 'ожидание числа для изменения курса usdt')
             # Запрашиваем число для изменения курса
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число для изменения курса USDT (в USDT):", reply_markup=keyboards.get_admin_cancel())
 
-        elif user_id in state and state[user_id] == 'ожидание числа для изменения курса usdt':
+        elif db.get_state(user_id) == 'ожидание числа для изменения курса usdt':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс для пользователей не изменен, по прежнему USDT: {user_course_THB} USDT", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
 
             try:
@@ -636,7 +634,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Курс изменен", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
 
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число для изменения курса.")
@@ -644,67 +642,67 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-        elif user_id in state and state[user_id] == 'ожидание числа для изменения маржи банков':
+        elif db.get_state(user_id) == 'ожидание числа для изменения маржи банков':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс не изменен, по прежнему {marje*100} % || {marje}", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
             try:
                 marje = float((float(text)/100)+1)
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс маржи для банков изменен на {marje}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число для изменения курса.Или напишите Отмена.", reply_markup=keyboards.get_admin_base())
 
-        elif user_id in state and state[user_id] == 'ожидание числа для изменения маржи для USDT':
+        elif db.get_state(user_id) == 'ожидание числа для изменения маржи для USDT':
             global usdt_marje
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс не изменен, по прежнему {usdt_marje*100} % || {usdt_marje}", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
             try:
                 usdt_marje = float((float(text)/100)+1)
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс маржи для USDT изменен на {usdt_marje}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число для изменения курса.Или напишите Отмена.", reply_markup=keyboards.get_admin_base())
 
-        elif user_id in state and state[user_id] == 'ожидание числа для изменения маржи для налички':
+        elif db.get_state(user_id) == 'ожидание числа для изменения маржи для налички':
             if text == "Отмена":
                 # Сбрасываем состояние
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс не изменен, по прежнему {cash_marje*100} % || {cash_marje}", reply_markup=keyboards.get_admin_base())
-                del state[user_id]
+                db.set_state(user_id, '0')
                 return
             try:
                 cash_marje = float((float(text)/100)+1)
                 # Выполняем действия для изменения курса
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс маржи для налички изменен на {cash_marje}", reply_markup=keyboards.get_admin_base())
                 # Сбрасываем состояние
-                del state[user_id]
+                db.set_state(user_id, '0')
             except ValueError:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text="Некорректное число. Введите число для изменения курса.Или напишите Отмена.", reply_markup=keyboards.get_admin_base())
 
         if text == "Изменить процент маржи для банков":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'ожидание числа для изменения маржи банков'
+            db.set_state(user_id, 'ожидание числа для изменения маржи банков')
             # Запрашиваем число для изменения курса
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число для изменения процента маржи для банков (в процентах):", reply_markup=keyboards.get_admin_cancel())
 
         if text == "Изменить процент маржи для USDT":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'ожидание числа для изменения маржи для USDT'
+            db.set_state(user_id, 'ожидание числа для изменения маржи для USDT')
             # Запрашиваем число для изменения курса
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число для изменения процента маржи  для usdt (в процентах):", reply_markup=keyboards.get_admin_cancel())
 
         if text == "Изменить процент маржи для налички":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
-            state[user_id] = 'ожидание числа для изменения маржи для налички'
+            db.get_state(user_id, 'ожидание числа для изменения маржи для налички')
             # Запрашиваем число для изменения курса
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Введите число для изменения процента маржи для налички (в процентах):", reply_markup=keyboards.get_admin_cancel())
 
@@ -746,23 +744,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Чтобы точнее узнать курс выберите cумму, способ оплаты и нажмите разместить заказ, чтобы связаться с оператором ''', reply_markup=keyboards.get_user_base())
             return
 
-        elif user_id in state and state[user_id] == 'ожидание оценки':
+        elif db.get_state(user_id) == 'ожидание оценки':
             db.set_mark(complete[user_id], text)
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Благодарим за оценку 👍", reply_markup=keyboards.get_user_base())
 
-            del(state[user_id])
+            db.set_state(user_id, '0')
             return
 
         if user_id in complete and complete[user_id] is not None:
 
              if text == 'Поставить оценку':
-                state[user_id] = 'ожидание оценки'
+                db.set_state(user_id, 'ожидание оценки')
                 await context.bot.send_message(chat_id=update.effective_chat.id, text='Оцените работу нашего сервиса от 1 до 5 баллов', reply_markup=keyboards.get_user_marks())
                 return
 
              if text == 'Оставить отзыв':
-                state[user_id] = 'ожидание отзыва'
+                db.set_state(user_id, 'ожидание отзыва')
                 await context.bot.send_message(chat_id=update.effective_chat.id, text='Напишиет отзыв на нашу работу', reply_markup=None)
                 return
 
@@ -774,52 +772,40 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if text == "Поделиться геолокацией":
             geo_handler()
         if text == "Не делиться ⛔️":
-            del(state[user_id])
+            db.set_state(user_id, '0')
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Ожидайте ответа оператора ⏱", reply_markup=keyboards.get_user_base())
             return
 
         ### Для юзеров ###
         if text == "🟰 Выбрать сумму":
-            if user_id in state:
-                del(state[user_id])
+            db.set_state(user_id, '0')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Теперь вы можете выбрать сумму", reply_markup=keyboards.get_user_base())
             return
 
         ### Для юзеров ###
         ### После выбора суммы ждем когда пользователь выберет способ оплаты ###
-        elif user_id in state and state[user_id] == 'ожидание выбора способа оплаты':
+        elif (db.get_state(user_id) == 'ожидание_выбора_способа_оплаты'):
 
             if text in db.get_banks('rus'):
                 # Конвертация в баты
-                usdt, rub, crub, course_rub, course_THB = count_rub_marje(bat[user_id], text, float(user_course_THB)*(2-float(marje)))
+                usdt, rub, crub, course_rub, course_THB = count_rub_marje(db.get_bats(user_id), text, float(user_course_THB)*(2-float(marje)))
                 if text == '🟩 USDT':
-                    usdt = count_thb_usdt_user(bat[user_id])
+                    usdt = count_thb_usdt_user(db.get_bats(user_id))
 
                 average_rub_user[user_id] = crub
                 # Создание кнопки "Запросить"
                 request_button = InlineKeyboardButton('Разместить заказ и связаться с оператаром', callback_data="request")
 
-                txt = f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. или {usdt} USDT 💰\nРасчет ведется по курсу ({text} {round(crub,2)}) {course_rub} руб. ({course_THB} бат за USDT) 📊'
-
-                if text == '💵 Наличные':
-                    txt = f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. или {usdt} USD 💰\nРасчет ведется по курсу ({text} {round(crub,2)}) {course_rub} руб. ({course_THB} бат за USDT) 📊'
-
-                if text == '🟩 USDT':
-                    txt = f'Для получения {bat[user_id]} бат 🇹🇭\nВам необходимо: {rub} руб. или {usdt} USDT 💰\nРасчет ведется по курсу ({text}) {course_rub} руб. ({course_THB} бат за USDT) 📊'
-                    txt += "\n*При выборе оплаты в USDT, расчет принимается только в USDT"
-
-
+                txt = example.order_text(db.get_bats(user_id), text, course_THB, course_rub, rub, usdt)
 
                 # Создание клавиатуры с кнопкой "Запросить"
                 keyboard = InlineKeyboardMarkup([[request_button]])
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=txt, reply_markup=keyboard)
                 return
 
-
-
             if text == '🟰 Выбрать сумму':
-                del(state[user_id])
+                db.set_state(user_id, '0')
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f'😄Введите предпочтительную Вам сумму в батах, например, 15756 ⬇️', reply_markup=keyboards.get_user_base())
                 return
             else:
@@ -829,12 +815,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         elif text.isdigit():
 
-            if user_id in state and state[user_id] == 'ожидание оценки':
-                del(state[user_id])
+            if db.get_state(user_id) == 'ожидание оценки':
+                db.set_state(user_id, '0')
                 return
 
-            state[user_id] = 'ожидание выбора способа оплаты'
-            bat[user_id] = int(text)
+            db.set_state(user_id, 'ожидание_выбора_способа_оплаты')
+            db.set_bats(user_id, int(text))
 
             keyboard = ReplyKeyboardMarkup(keyboards.get_banks(), resize_keyboard=True)
 
