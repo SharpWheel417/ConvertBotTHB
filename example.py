@@ -1,3 +1,5 @@
+
+##Текст для заказов
 def order_text(bat, trade_method, course_thb, course_rub, rub, usdt):
 
     if (trade_method == '💵 Наличные'):
@@ -37,3 +39,8 @@ def order_text(bat, trade_method, course_thb, course_rub, rub, usdt):
 
 
     return mess
+
+
+
+def admin_text(type):
+    switch

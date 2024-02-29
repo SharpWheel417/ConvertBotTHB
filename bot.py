@@ -45,7 +45,9 @@ def parse_course(update: bool):
     print("Average:", course_rub)
 
     new_course_THB = bitazza.get_currency()
+    print("Новый курс битаззы: ", new_course_THB)
     if new_course_THB == 'error':
+        print("Ошибка парсинга битаззы")
         return
     global user_course_THB, admin_course_THB
     # if update is False:
@@ -64,9 +66,9 @@ def parse_course(update: bool):
     file.write(f"Date: {current_date}, course_THB: {course_THB}, admin_course_THB: {admin_course_THB}, user_course_THB: {user_course_THB}, course_THB: {course_THB}\n admin_course_rub: {admin_course_rub}, user_course_THB: {user_course_rub}\n")
     print("Данные успешно записаны в файл:", file_name)
     file.close()
-    print(course_THB)
+    print("Курс сейча: ", course_THB)
 
-
+##### РАСКОМЕНТИРОВАТЬ
 # thread_parse = threading.Thread(target=parse_course(True))
 # thread_parse.start()
 
@@ -74,7 +76,9 @@ lock = threading.Lock()
 
 def run_scheduler():
     # Запуск шедулера каждый час
-    schedule.every(1).hour.do(lambda: run_with_lock(parse_course, False))
+
+    ##### РАСКОМЕНТИРОВАТЬ
+    # schedule.every(1).hour.do(lambda: run_with_lock(parse_course, False))
 
     # schedule.every().day.at('10:00').do(lambda: run_with_lock(parse_course, True))
 
