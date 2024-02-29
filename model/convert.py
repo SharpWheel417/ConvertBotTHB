@@ -1,4 +1,4 @@
-import commex, bitazza
+import parsing.commex as commex, parsing.bitazza as bitazza
 
 ## Получаем чисту цену
 def clean(bat: int, course_THB: int, course_rub: int):
