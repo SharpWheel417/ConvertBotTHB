@@ -5,7 +5,7 @@ tracemalloc.start()
 import uuid, threading
 from datetime import datetime
 
-import convert, commex, db, regexes, geo, keyboards, bitazza, calc, example
+import convert, commex, database.db as db, regexes, geo, keyboards, bitazza, calc, example
 from config import battle_life
 
 BOT_TOKEN = battle_life

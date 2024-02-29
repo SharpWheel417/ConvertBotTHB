@@ -1,5 +1,5 @@
 import requests
-import db
+import database.db as db
 
 GEO_TOKEN = 'pk.2befbac57908662b2b82dd31b3ec964f'
 
