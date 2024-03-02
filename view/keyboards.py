@@ -69,3 +69,7 @@ def get_admin_inline_buttons_in_progress():
     keyboard = InlineKeyboardMarkup([[cancle_button], [complete_button]])
 
     return keyboard
+
+
+def request_user():
+    return ReplyKeyboardMarkup([["Посмотреть банкоматы и сообщить свое местоположение 🏧"], ["🟰 Выбрать сумм"], ["Не делиться ⛔️"]], resize_keyboard=True)

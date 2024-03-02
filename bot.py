@@ -13,7 +13,8 @@ from config import pills
 
 BOT_TOKEN = pills
 
-ADMIN_ID = [1194700554, 6920037183]
+# ADMIN_ID = [1194700554, 6920037183]
+ADMIN_ID = [1194700554]
 # ADMIN_ID = []
 CHANEL_ID = 'channel4exchange_thai'
 
@@ -254,14 +255,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ### Для юзеров ###
         if text == "Узнать курс":
 
-            course_rub_marje = float(user_course_rub)*float(marje)
-            course_thb_marje = float(user_course_THB)*(2-float(marje))
+            user_course_rub = float(user_course_rub)
+            user_course_THB = float(user_course_THB)
+            marje = float(marje)
 
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f'''🏷️
-Курс THB = {round(float(course_rub_marje)/float(course_thb_marje),2)} RUB 🇷🇺
-Курс USDT = {round(float(course_thb_marje), 2)} THB 🇹🇭
+            course_rub_marje = user_course_rub * marje
+            course_thb_marje = user_course_THB * (2 - marje)
+            course_thb_rub = round(course_rub_marje / course_thb_marje, 2)
+            course_thb_value = round(course_thb_marje, 2)
 
-Чтобы точнее узнать курс выберите cумму, способ оплаты и нажмите разместить заказ, чтобы связаться с оператором ''', reply_markup=keyboards.get_user_base())
+            message_text = get_message.get_mess("course", False).format(course_thb_value=course_thb_value, course_thb_rub=course_thb_rub)
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=message_text, reply_markup=keyboards.get_user_base())
             return
 
         elif db.get_state(user_id) == 'ожидание оценки':
@@ -286,21 +290,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
         if text == "Своя сумма":
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"😄Введите предпочтительную Вам сумму в батах, например, 15756 ⬇️")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("my_sum", False))
             return
 
         if text == "Поделиться геолокацией":
             geo_handler()
         if text == "Не делиться ⛔️":
             db.set_state(user_id, '0')
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Ожидайте ответа оператора ⏱", reply_markup=keyboards.get_user_base())
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("send_geo", False), reply_markup=keyboards.get_user_base())
             return
 
         ### Для юзеров ###
         if text == "🟰 Выбрать сумму":
             db.set_state(user_id, '0')
 
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Теперь вы можете выбрать сумму", reply_markup=keyboards.get_user_base())
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("take_sum", False), reply_markup=keyboards.get_user_base())
             return
 
         ### Для юзеров ###
@@ -322,11 +326,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Создание клавиатуры с кнопкой "Запросить"
                 keyboard = InlineKeyboardMarkup([[request_button]])
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=txt, reply_markup=keyboard)
-                return
-
-            if text == '🟰 Выбрать сумму':
-                db.set_state(user_id, '0')
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'😄Введите предпочтительную Вам сумму в батах, например, 15756 ⬇️', reply_markup=keyboards.get_user_base())
                 return
             else:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f'🪙 Пожалуйста, выберите способ оплаты \nЭто поможет нам выгоднее для Вас рассчитать курс 📊')
@@ -382,7 +381,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         chat_id = db.get_chat_id(username)
 
         ## Отправляем сообщение пользователю
-        await context.bot.send_message(chat_id=chat_id, text=f'💬 Ваш заказ взят в работу\nДалее диалог ведет оператор @operator4exchange \nВаш ID заказа: {order_id}\nЕсли вы закрыли сообщения для других пользователей или у вас нет username (@username), то напишите нашему оператору сами')
+        await context.bot.send_message(chat_id=chat_id, text=get_message.get_mess("take_order", False))
 
         db.set_progress(order_id)
 
@@ -422,13 +421,8 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
     if callback_data == 'request':
 
-        share_location_button = KeyboardButton("Посмотреть банкоматы и сообщить свое местоположение 🏧", request_location=True)
-        select_amount_button = KeyboardButton("🟰 Выбрать сумму")
-        no_button = KeyboardButton("Не делиться ⛔️")
-        keyboard = ReplyKeyboardMarkup([[share_location_button], [no_button], [select_amount_button]], resize_keyboard=True)
-
         # Отправляем запрос на получение бат
-        await context.bot.send_message(chat_id=query.message.chat_id, text="✅ Ваш заказ размещен \n🧑‍💻 Оператор @operator4exchange скоро свяжется с вами \nА пока можете посмотреть, где ближайшие банкомат или просто сообщить курьеру где вы находитесь, отправив свое текущее местоположение 🌎\n\nЕсли вы закрыли сообщения для других пользователей или у вас нет username (@username), то напишите нашему оператору сами", reply_markup=keyboard)
+        await context.bot.send_message(chat_id=query.message.chat_id, text=get_message.get_mess("request_user", False), reply_markup=keyboards.request_user())
 
         ## Парсим из текста запроса пользоавтеля нужные данные
         bat, rub, usdt, rub_thb, thb_usdt, trade_method = regexes.user_request(query.message.text)

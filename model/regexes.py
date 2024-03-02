@@ -8,8 +8,8 @@ def user_request(string):
 
     ##бат
     bat = re.search(r'(\d+(?:\.\d+)?) бат', string).group(1)
-    rub = re.search(r'(\d+(?:\.\d+)?) руб', string).group(1)
-    usdt = re.search(r'(\d+(?:\.\d+)?) USD', string).group(1)
+    rub = re.search(r'(\d+(?:\.\d+)?) руб.', string).group(1)
+    course = re.search(r'Курс (\d+(?:\.\d+)?)', string).group(1)
     trade_method = re.search(r'по курсу \((?:)?([^)]+)\)', string).group(1)
 
     last_two_numbers = re.findall(r'\b\d+\.\d+\b', string)[-2:]
