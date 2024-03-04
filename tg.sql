@@ -123,10 +123,30 @@ CREATE SEQUENCE user_marje_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CAC
 CREATE TABLE "public"."user_marje" (
     "id" integer DEFAULT nextval('user_marje_id_seq') NOT NULL,
     "count" integer NOT NULL,
-    "marje" integer NOT NULL,
+    "marje" numeric NOT NULL,
+    "type" character(255) NOT NULL,
     CONSTRAINT "user_marje_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
 
+INSERT INTO "user_marje" ("id", "count", "marje", "type") VALUES
+(1,	0,	1.032,	'bank                                                                                                                                                                                                                                                           '),
+(2,	1000,	1.03,	'bank                                                                                                                                                                                                                                                           '),
+(3,	3000,	1.027,	'bank                                                                                                                                                                                                                                                           '),
+(4,	10000,	1.025,	'bank                                                                                                                                                                                                                                                           '),
+(5,	20000,	1.022,	'bank                                                                                                                                                                                                                                                           '),
+(6,	40000,	1.02,	'bank                                                                                                                                                                                                                                                           '),
+(7,	0,	1.03,	'usdt                                                                                                                                                                                                                                                           '),
+(8,	1000,	1.028,	'usdt                                                                                                                                                                                                                                                           '),
+(9,	3000,	1.025,	'usdt                                                                                                                                                                                                                                                           '),
+(10,	10000,	1.02,	'usdt                                                                                                                                                                                                                                                           '),
+(11,	20000,	1.019,	'usdt                                                                                                                                                                                                                                                           '),
+(12,	40000,	1.018,	'usdt                                                                                                                                                                                                                                                           '),
+(13,	0,	1.06,	'cash                                                                                                                                                                                                                                                           '),
+(14,	1000,	1.057,	'cash                                                                                                                                                                                                                                                           '),
+(15,	3000,	1.053,	'cash                                                                                                                                                                                                                                                           '),
+(16,	10000,	1.049,	'cash                                                                                                                                                                                                                                                           '),
+(17,	20000,	1.047,	'cash                                                                                                                                                                                                                                                           '),
+(18,	40000,	1.045,	'cash                                                                                                                                                                                                                                                           ');
 
 DROP TABLE IF EXISTS "user_state";
 DROP SEQUENCE IF EXISTS state_id_seq;
@@ -143,7 +163,7 @@ CREATE TABLE "public"."user_state" (
 ) WITH (oids = false);
 
 INSERT INTO "user_state" ("id", "chat_id", "state", "bat", "complete") VALUES
-(1,	'1194700554                                                                                                                                                                                                                                                     ',	'0                                                                                                                                                                                                                                                              ',	'0                                                                                                                                                                                                                                                              ',	NULL),
+(1,	'1194700554                                                                                                                                                                                                                                                     ',	'ожидание_выбора_способа_оплаты                                                                                                                                                                                                                                 ',	'0                                                                                                                                                                                                                                                              ',	NULL),
 (10,	'6908096537                                                                                                                                                                                                                                                     ',	'ожидание_выбора_способа_оплаты                                                                                                                                                                                                                                 ',	'0                                                                                                                                                                                                                                                              ',	NULL);
 
 DROP TABLE IF EXISTS "users";
@@ -166,4 +186,4 @@ INSERT INTO "users" ("id", "name", "chat_id", "request") VALUES
 (8,	'Xd                                                                                                                                                                                                                                                             ',	'6908096537                                                                                                                                                                                                                                                     ',	't'),
 (7,	'NEVINOVEN700                                                                                                                                                                                                                                                   ',	'5794240411                                                                                                                                                                                                                                                     ',	't');
 
--- 2024-03-02 04:04:48.647175+00
+-- 2024-03-04 11:18:42.279643+00

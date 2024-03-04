@@ -8,14 +8,15 @@ from datetime import datetime
 import model.convert as convert, parsing.commex as commex, database.db as db, model.regexes as regexes, parsing.geo as geo, view.keyboards as keyboards, parsing.bitazza as bitazza, model.calc as calc, database.example as example
 
 import database.get_message as get_message
+import database.marje as mj
 
 from config import pills
 
 BOT_TOKEN = pills
 
 # ADMIN_ID = [1194700554, 6920037183]
-ADMIN_ID = [1194700554]
-# ADMIN_ID = []
+# ADMIN_ID = [1194700554]
+ADMIN_ID = []
 CHANEL_ID = 'channel4exchange_thai'
 
 bat = {}
@@ -113,7 +114,11 @@ def count_thb_usdt_user(bat):
     return round(float((float(bat)/(float(round(user_course_THB, 2))*(2-usdt_marje)))),2)
 
 def count_rub_marje(bat: int, trade: str, thb_course):
-    global marje, course_rub, user_course_rub, user_course_THB, cash_marje
+    global course_rub, user_course_rub, user_course_THB, cash_marje
+
+
+    volume_marje = mj.get(trade, bat)
+    print("volume_marje", volume_marje)
 
     if trade == '💵 Наличные':
         course_ruble = user_course_rub
@@ -151,7 +156,7 @@ def count_rub_marje(bat: int, trade: str, thb_course):
 
     # Курс Рубля к Бате
 
-    return round(usdt,2), round(rub,2), cruble, c_rub, c_thb
+    return round(usdt,2), round(rub,2), cruble, c_rub, c_thb, volume_marje
 
 ##### Команда /user для админа ####
 async def user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -313,7 +318,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if text in db.get_banks('rus'):
                 # Конвертация в баты
-                usdt, rub, crub, course_rub, course_THB = count_rub_marje(db.get_bats(user_id), text, float(user_course_THB)*(2-float(marje)))
+                usdt, rub, crub, course_rub, course_THB, volume_marje = count_rub_marje(db.get_bats(user_id), text, float(user_course_THB)*(2-float(marje)))
                 if text == '🟩 USDT':
                     usdt = count_thb_usdt_user(db.get_bats(user_id))
 
@@ -326,6 +331,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Создание клавиатуры с кнопкой "Запросить"
                 keyboard = InlineKeyboardMarkup([[request_button]])
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=txt, reply_markup=keyboard)
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Маража {volume_marje}")
                 return
             else:
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=f'🪙 Пожалуйста, выберите способ оплаты \nЭто поможет нам выгоднее для Вас рассчитать курс 📊')
