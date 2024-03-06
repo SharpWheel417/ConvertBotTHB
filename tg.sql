@@ -147,6 +147,25 @@ INSERT INTO "user_marje" ("id", "count", "marje", "type") VALUES
 (16,	10000,	1.049,	'cash                                                                                                                                                                                                                                                           '),
 (17,	20000,	1.047,	'cash                                                                                                                                                                                                                                                           '),
 (18,	40000,	1.045,	'cash                                                                                                                                                                                                                                                           ');
+(11,	100000000000,	1.002,	'view                                                                                                                                                                                                                                                           ');
+
+
+DROP TABLE IF EXISTS "course";
+DROP SEQUENCE IF EXISTS course_id_seq;
+CREATE SEQUENCE course_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1;
+
+CREATE TABLE "public"."course" (
+    "id" integer DEFAULT nextval('course_id_seq') NOT NULL,
+    "course" integer NOT NULL,
+    "type" character(255) NOT NULL,
+    CONSTRAINT "course_pkey" PRIMARY KEY ("id")
+) WITH (oids = false);
+
+INSERT INTO "course" ("id", "course", "type") VALUES
+(1,	0,	'admin_usdt'),
+(2,	0,	'user_usdt'),
+(3,	0,	'admin_THB'),
+(4,	0,	'user_THB');
 
 DROP TABLE IF EXISTS "user_state";
 DROP SEQUENCE IF EXISTS state_id_seq;

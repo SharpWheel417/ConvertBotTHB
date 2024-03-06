@@ -5,12 +5,21 @@ def user_request(string):
     Вытыаскивает из текста запроса пользователя
     баты, рубли, usdt, курс и личный курс пользователя
     '''
+    trade_method = re.search(r'по курсу \((?:)?([^)]+)\)', string).group(1)
+
+    # if trade_method == '🟩 USDT':
+
+
+    # elif trade_method == '💵 Наличные':
+
+
+    # else:
+
+    bat = re.search(r'(\d+(?:\.\d+)?) бат', string).group(1)
 
     ##бат
-    bat = re.search(r'(\d+(?:\.\d+)?) бат', string).group(1)
     rub = re.search(r'(\d+(?:\.\d+)?) руб.', string).group(1)
     course = re.search(r'Курс (\d+(?:\.\d+)?)', string).group(1)
-    trade_method = re.search(r'по курсу \((?:)?([^)]+)\)', string).group(1)
 
     last_two_numbers = re.findall(r'\b\d+\.\d+\b', string)[-2:]
     if len(last_two_numbers) >= 2:
