@@ -1,33 +1,39 @@
 import re
 
-def user_request(string):
+def user_request(type:str, string: str) -> tuple:
     '''
     Вытыаскивает из текста запроса пользователя
     баты, рубли, usdt, курс и личный курс пользователя
     '''
-    trade_method = re.search(r'по курсу \((?:)?([^)]+)\)', string).group(1)
 
-    # if trade_method == '🟩 USDT':
+    if type and type.group(1) == '🟩 USDT':
 
+        exchange_match = re.search(r'Курс (.+?) 📊', string)
+        if exchange_match:
+            exchange = exchange_match.group(1)
 
-    # elif trade_method == '💵 Наличные':
+        bat_match = re.search(r'Для получения (.+?) бат 🇹🇭', string)
+        if bat_match:
+            bat = bat_match.group(1)
 
+        usdt_match = re.search(r'(\d+\.\d+) USDT', string)
+        if usdt_match:
+            usdt = usdt_match.group(1)
 
-    # else:
+        return float(exchange), float(bat), float(usdt)
 
-    bat = re.search(r'(\d+(?:\.\d+)?) бат', string).group(1)
+    if type and type.group(1) == '💵 Наличные':
+        course_usd = re.search(r'Курс USD (\d+\.\d+)\$', string).group(1)
+        course_rub = re.search(r'Курс RUB (\d+\.\d+)₽', string).group(1)
+        bat = re.search(r'Для получения (\d+\.\d+) бат', string).group(1)
+        rub, usd = re.search(r'(\d+\.\d+) руб. или (\d+\.\d+) USD', string).groups()
+        return float(course_usd), float(course_rub), float(bat), float(rub), float(usd)
 
-    ##бат
-    rub = re.search(r'(\d+(?:\.\d+)?) руб.', string).group(1)
-    course = re.search(r'Курс (\d+(?:\.\d+)?)', string).group(1)
-
-    last_two_numbers = re.findall(r'\b\d+\.\d+\b', string)[-2:]
-    if len(last_two_numbers) >= 2:
-        rub_thb, thb_usdt = last_two_numbers
     else:
-        rub_thb, thb_usdt = None, None
-
-    return float(bat), float(rub), float(usdt), float(rub_thb), float(thb_usdt), trade_method
+        course = re.search(r'Курс (\d+\.\d+)📊', string).group(1)
+        bat = re.search(r'Для получения (\d+\.\d+) бат', string).group(1)
+        rub = re.search(r'Вам необходимо: (\d+\.\d+) руб', string).group(1)
+        return float(course), float(rub), float(bat)
 
 
 def admin_apply_user_name(string):

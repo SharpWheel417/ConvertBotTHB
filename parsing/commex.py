@@ -63,7 +63,7 @@ def get_by_trade_method(method: str, bat: float, course_THB: float, course_rub: 
         return get_average()
 
 
-def get_best(summa_rub):
+def get_best(summa_rub) -> tuple[float, str]:
     banks = db.get_banks('eng')
     print(banks)
     for i in get_get():
