@@ -73,4 +73,4 @@ def get_admin_inline_buttons_in_progress():
 
 def request_user():
     share_location_button = KeyboardButton("Посмотреть банкоматы и сообщить свое местоположение 🏧", request_location=True)
-    return ReplyKeyboardMarkup([[share_location_button], ["🟰 Выбрать сумм"], ["Не делиться ⛔️"]], resize_keyboard=True)
+    return ReplyKeyboardMarkup([[share_location_button], ["🟰 Выбрать сумму"], ["Не делиться ⛔️"]], resize_keyboard=True)

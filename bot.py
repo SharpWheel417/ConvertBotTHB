@@ -21,12 +21,12 @@ import view.marje as vm
 import view.course as vc
 import view.user_bank as vu
 
-from config import battle_life
+from config import pills
 
-BOT_TOKEN = battle_life
+BOT_TOKEN = pills
 
-ADMIN_ID = [1194700554, 6920037183]
-# ADMIN_ID = [1194700554]
+# ADMIN_ID = [1194700554, 6920037183]
+ADMIN_ID = [1194700554]
 # ADMIN_ID = []
 CHANEL_ID = 'channel4exchange_thai'
 
@@ -65,9 +65,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global user_course_rub, user_course_THB
     user_id = update.effective_user.id
     username = update.effective_user.username
-    user_first_name = update.effective_user.first_name
+    user_fio = update.effective_user.first_name + " " + update.effective_user.last_name
 
-    db.add_new_user(user_id, username, user_first_name)
+    db.add_new_user(user_id, username, user_fio)
 
     s.set_state(user_id, '0')
     db.set_bats(user_id, '0')
@@ -146,7 +146,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if text == "Узнать курс":
             await vc.get_user(update, context)
 
-        elif s.get_state(user_id) == 'ожидание оценки':
+        elif s.get_state(user_id) == 'ожидание_оценки':
             # db.set_mark(complete[user_id], text)
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Благодарим за оценку 👍", reply_markup=keyboards.get_user_base())
@@ -154,17 +154,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             s.set_state(user_id, '0')
             return
 
-        # if user_id in complete and complete[user_id] is not None:
+        if s.get_state(user_id) == 'ожидание_оценки':
 
-        #      if text == 'Поставить оценку':
-        #         db.set_state(user_id, 'ожидание оценки')
-        #         await context.bot.send_message(chat_id=update.effective_chat.id, text='Оцените работу нашего сервиса от 1 до 5 баллов', reply_markup=keyboards.get_user_marks())
-        #         return
+             if text == 'Поставить оценку':
+                db.set_state(user_id, 'ожидание_оценки')
+                await context.bot.send_message(chat_id=update.effective_chat.id, text='Оцените работу нашего сервиса от 1 до 5 баллов', reply_markup=keyboards.get_user_marks())
+                return
 
-        #      if text == 'Оставить отзыв':
-        #         db.set_state(user_id, 'ожидание отзыва')
-        #         await context.bot.send_message(chat_id=update.effective_chat.id, text='Напишиет отзыв на нашу работу', reply_markup=None)
-        #         return
+             if text == 'Оставить отзыв':
+                db.set_state(user_id, 'ожидание_оценки')
+                await context.bot.send_message(chat_id=update.effective_chat.id, text='Напишиет отзыв на нашу работу', reply_markup=None)
+                return
 
 
         if text == "Своя сумма":
@@ -192,7 +192,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         elif text.isdigit():
 
-            if s.get_state(user_id) == 'ожидание оценки':
+            if s.get_state(user_id) == 'ожидание_оценки':
                 s.set_state(user_id, '0')
                 return
 
@@ -241,7 +241,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         ## Отправляем сообщение пользователю
         await context.bot.send_message(chat_id=chat_id, text=get_message.get_mess("take_order", False))
 
-        db.set_progress(order_id)
+        db.update_order(order_id, 'in_progress')
 
     if callback_data == 'complete':
 
@@ -263,8 +263,8 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         await context.bot.send_message(chat_id=chat_id, text=get_message.get_mess("text_for_order", False), reply_markup=board)
 
         # complete[int(chat_id)] = order_id
-
-        db.set_complete(order_id)
+        s.set_state(chat_id, 'ожидание_оценки')
+        db.update_order(order_id, 'completed')
 
     if callback_data == 'cancle':
 
@@ -276,7 +276,7 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
         await context.bot.edit_message_reply_markup(chat_id=query.message.chat_id, message_id=query.message.message_id, reply_markup=None)
 
-        db.set_cancle(order_id)
+        db.update_order(order_id, 'cancle')
 
 
     ### Кнопка "Запросить" ###
@@ -297,13 +297,19 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
             real_usdt = bat/c_thb
             gain_usdt = usdt - real_usdt
             gain_bat = gain_usdt*c_thb
+            gain_rub = gain_usdt*c.get('rub')
 
             rub = bat*(c.get('rub')/c_thb)
 
+            username = query.from_user.username
+            if query.from_user.username is None:
+                username = "--"+query.from_user.first_name+" "+query.from_user.last_name
+
+            db.create_order(ids, username, query.message.chat_id, bat, rub, usdt, course, gain_rub, gain_usdt, trade_method.group(1))
 
             best_trade_method = commex.get_best(rub)
             txt = get_message.get_mess('order_usdt', True).format(id=ids,
-                                                                username=query.from_user.username,
+                                                                username=username,
                                                                 bat=bat,
                                                                 client_course_thb=course,
                                                                 real_course_thb=c_thb,
@@ -330,8 +336,14 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
             best_trade_method = commex.get_best(rub)
 
+            username = query.from_user.username
+            if query.from_user.username is None:
+                username = "--"+query.from_user.first_name+" "+query.from_user.last_name
+
+            db.create_order(ids, username, query.message.chat_id, bat, rub, usdt, course_rub, gain_rub, gain_usdt, trade_method.group(1))
+
             txt = get_message.get_mess('order_cash', True).format(id=ids,
-                                                                username=query.from_user.username,
+                                                                username=username,
                                                                 bat=bat,
                                                                 client_thb_rub=round(client_thb_rub,2),
                                                                 client_rub=round(course_rub,2),
@@ -363,8 +375,14 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
             real_course_thb_rub = c.get('rub')/c.get('thb')
 
+            username = query.from_user.username
+            if query.from_user.username is None:
+                username = "--"+query.from_user.first_name+" "+query.from_user.last_name
+
+            db.create_order(ids, username, query.message.chat_id, bat, rub, usdt, course, gain_rub, gain_usdt, trade_method.group(1))
+
             txt = get_message.get_mess('order_bank', True).format(id=ids,
-                                                                username=query.from_user.username,
+                                                                username=username,
                                                                 bat=bat,
                                                                 trade_method=trade_method.group(1),
                                                                 client_course_rub=course,
@@ -392,9 +410,6 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
         for chat_id in ADMIN_ID:
             await context.bot.send_message(chat_id=chat_id, text=txt, reply_markup=keyboard)
-
-        ### Записываем данные в базу данных ###
-        # db.create_order(ids, query.from_user.username, float(rub), clean_count, usdt, rub_thb, marje, gain, trade_method, bat, user_want_usdt)
 
     return True
 
