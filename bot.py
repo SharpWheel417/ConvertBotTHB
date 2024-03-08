@@ -4,10 +4,18 @@ import schedule, time, re, tracemalloc, logging
 tracemalloc.start()
 import uuid, threading
 from datetime import datetime
+import functools
+import asyncio
+import concurrent.futures
 
 import model.convert as convert, parsing.commex as commex, database.db as db, model.regexes as regexes, parsing.geo as geo, view.keyboards as keyboards, parsing.bitazza as bitazza, model.calc as calc, database.example as example
 
 import database.get_message as get_message
+import database.marje as mj
+import database.course as c
+import parsing.parse as p
+
+import view.marje as vm
 
 from config import pills
 
@@ -17,88 +25,6 @@ BOT_TOKEN = pills
 ADMIN_ID = [1194700554]
 # ADMIN_ID = []
 CHANEL_ID = 'channel4exchange_thai'
-
-bat = {}
-average_rub_user = {}
-complete = {}
-marje = None
-marje = 1.03
-usdt_marje = 1.03
-cash_marje = 1.09
-
-# user_course_THB = 100
-user_course_THB = 35.6
-user_course_rub = 91.1
-admin_course_THB = 35.6
-admin_course_rub = 91.1
-
-# course_THB = 100
-course_THB = 35.6
-course_rub = 91.1
-
-
-file_name = "course_THB_data.txt"
-
-
-def parse_course(update: bool):
-
-    new_course_rub = commex.get_average()
-    global course_rub, course_THB, admin_course_rub, user_course_rub
-    admin_course_rub = new_course_rub
-    user_course_rub = new_course_rub
-    course_rub = new_course_rub
-    print("Average:", course_rub)
-
-    new_course_THB = bitazza.get_currency()
-    print("Новый курс битаззы: ", new_course_THB)
-    if new_course_THB == 'error':
-        print("Ошибка парсинга битаззы")
-        return
-    global user_course_THB, admin_course_THB
-    # if update is False:
-    #     if(float(new_course_THB)<user_course_THB):
-    #         user_course_THB = new_course_THB
-    #     admin_course_THB = new_course_THB
-    #     course_THB = new_course_THB
-    # else:
-    user_course_THB = new_course_THB
-    admin_course_THB = new_course_THB
-    course_THB = new_course_THB
-
-    ###Запись логов в файл
-    file = open(file_name, 'a')
-    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    file.write(f"Date: {current_date}, course_THB: {course_THB}, admin_course_THB: {admin_course_THB}, user_course_THB: {user_course_THB}, course_THB: {course_THB}\n admin_course_rub: {admin_course_rub}, user_course_THB: {user_course_rub}\n")
-    print("Данные успешно записаны в файл:", file_name)
-    file.close()
-    print("Курс сейча: ", course_THB)
-
-##### РАСКОМЕНТИРОВАТЬ
-# thread_parse = threading.Thread(target=parse_course(True))
-# thread_parse.start()
-
-lock = threading.Lock()
-
-def run_scheduler():
-    # Запуск шедулера каждый час
-
-    ##### РАСКОМЕНТИРОВАТЬ
-    # schedule.every(1).hour.do(lambda: run_with_lock(parse_course, False))
-
-    # schedule.every().day.at('10:00').do(lambda: run_with_lock(parse_course, True))
-
-    # Бесконечный цикл для запуска шедулера
-    while True:
-        schedule.run_pending()
-        time.sleep(10)
-
-def run_with_lock(func, arg):
-    with lock:
-        func(arg)
-
-# Создание и запуск потока для шедулера
-scheduler_thread = threading.Thread(target=run_scheduler)
-scheduler_thread.start()
 
 selected_user_id = None
 
@@ -112,46 +38,6 @@ def count_thb_usdt_user(bat):
     global user_course_THB, usdt_marje
     return round(float((float(bat)/(float(round(user_course_THB, 2))*(2-usdt_marje)))),2)
 
-def count_rub_marje(bat: int, trade: str, thb_course):
-    global marje, course_rub, user_course_rub, user_course_THB, cash_marje
-
-    if trade == '💵 Наличные':
-        course_ruble = user_course_rub
-        local_marje = float(cash_marje)
-
-    elif trade == '⚪️ Другие банки':
-        course_ruble =  user_course_rub
-        local_marje = marje
-
-    elif trade == '🟩 USDT':
-        course_ruble = user_course_rub
-        local_marje = usdt_marje
-
-    else:
-        course_ruble = commex.get_by_trade_method(trade, bat, user_course_THB, user_course_rub, marje)
-        local_marje = marje
-
-    ## Если мы не смогли найти среднее значение - то ставим обычный средний курс
-    if course_ruble == 'error' or course_ruble == 0 or course_ruble is None:
-        course_ruble = course_rub
-
-    usdt = (float(bat) / round(user_course_THB*(2-local_marje),2))
-
-    ## Курс Баты к Рублю
-    thb_rub = round((course_ruble*local_marje)/(user_course_THB*(2-local_marje)),2)
-
-    cruble = round((course_ruble*local_marje), 2)
-
-    c_rub = round(float(cruble)/round(user_course_THB*(2-local_marje),2),2)
-    rub = float(bat) * float(c_rub)
-
-
-    ##курс баты с маржой
-    c_thb = round(user_course_THB*(2-local_marje),2)
-
-    # Курс Рубля к Бате
-
-    return round(usdt,2), round(rub,2), cruble, c_rub, c_thb
 
 ##### Команда /user для админа ####
 async def user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -257,36 +143,42 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             user_course_rub = float(user_course_rub)
             user_course_THB = float(user_course_THB)
-            marje = float(marje)
+            # marje = float(marje)
 
-            course_rub_marje = user_course_rub * marje
-            course_thb_marje = user_course_THB * (2 - marje)
+            thb = c.get('thb')
+            rub = c.get('rub')
+            m = mj.get_view()
+            course_rub_marje = rub * m
+            course_thb_marje = thb * (2 - m)
             course_thb_rub = round(course_rub_marje / course_thb_marje, 2)
             course_thb_value = round(course_thb_marje, 2)
 
+
+
             message_text = get_message.get_mess("course", False).format(course_thb_value=course_thb_value, course_thb_rub=course_thb_rub)
             await context.bot.send_message(chat_id=update.effective_chat.id, text=message_text, reply_markup=keyboards.get_user_base())
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Маржа: {m}, Курс THB: {thb}, Курс RUB: {rub}")
             return
 
         elif db.get_state(user_id) == 'ожидание оценки':
-            db.set_mark(complete[user_id], text)
+            # db.set_mark(complete[user_id], text)
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Благодарим за оценку 👍", reply_markup=keyboards.get_user_base())
 
             db.set_state(user_id, '0')
             return
 
-        if user_id in complete and complete[user_id] is not None:
+        # if user_id in complete and complete[user_id] is not None:
 
-             if text == 'Поставить оценку':
-                db.set_state(user_id, 'ожидание оценки')
-                await context.bot.send_message(chat_id=update.effective_chat.id, text='Оцените работу нашего сервиса от 1 до 5 баллов', reply_markup=keyboards.get_user_marks())
-                return
+        #      if text == 'Поставить оценку':
+        #         db.set_state(user_id, 'ожидание оценки')
+        #         await context.bot.send_message(chat_id=update.effective_chat.id, text='Оцените работу нашего сервиса от 1 до 5 баллов', reply_markup=keyboards.get_user_marks())
+        #         return
 
-             if text == 'Оставить отзыв':
-                db.set_state(user_id, 'ожидание отзыва')
-                await context.bot.send_message(chat_id=update.effective_chat.id, text='Напишиет отзыв на нашу работу', reply_markup=None)
-                return
+        #      if text == 'Оставить отзыв':
+        #         db.set_state(user_id, 'ожидание отзыва')
+        #         await context.bot.send_message(chat_id=update.effective_chat.id, text='Напишиет отзыв на нашу работу', reply_markup=None)
+        #         return
 
 
         if text == "Своя сумма":
@@ -312,23 +204,47 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif (db.get_state(user_id) == 'ожидание_выбора_способа_оплаты'):
 
             if text in db.get_banks('rus'):
-                # Конвертация в баты
-                usdt, rub, crub, course_rub, course_THB = count_rub_marje(db.get_bats(user_id), text, float(user_course_THB)*(2-float(marje)))
+
+                ## Получаем данные из бд
+                c_thb = c.get('thb')
+                c_rub = c.get('rub')
+                u_bat = db.get_bats(user_id)
+
+                # usdt =  u_bat/(2-m)
+
                 if text == '🟩 USDT':
-                    usdt = count_thb_usdt_user(db.get_bats(user_id))
+                    m = mj.get('usdt', db.get_bats(user_id))
+                    client_c_thb = round(c_thb*(2-m),2)
+                    usdt =  u_bat/client_c_thb
+                    txt = get_message.get_mess("usdt", False).format(usdt=round(usdt,2), course_thb=client_c_thb, bat=u_bat)
 
-                average_rub_user[user_id] = crub
+                elif text == '💵 Наличные':
+                    m = mj.get('cash', db.get_bats(user_id))
+                    rub =  u_bat*((c_rub*m)/(c_thb*(2-m)))
+                    usdt =  u_bat/(c.get('thb')*(2-m))
+                    txt = get_message.get_mess("cash", False).format(course_rub=round(c_rub*(m),2), course_usdt=round(c_thb*(2-m),2), bat=u_bat, rub=round(rub,2), usdt=round(usdt,2))
+
+                else:
+                    m = mj.get('bank',db.get_bats(user_id))
+                    course_thb_bat = c_rub*(m)/c_thb*(2-m)
+                    rub_course = commex.get_by_trade_method(text, u_bat, c_thb, c_rub, m)
+                    rub =  u_bat*((float(rub_course)*m)/(c_thb*(2-m)))
+                    usdt =  u_bat/(2-m)
+                    txt = get_message.get_mess("bank", False).format(course_thb_bat=round(course_thb_bat,2), rub=round(rub,2), bat=u_bat, trade_method=text)
+
+
                 # Создание кнопки "Запросить"
-                request_button = InlineKeyboardButton('Разместить заказ и связаться с оператаром', callback_data="request")
+                request_button = InlineKeyboardButton('Разместить заказ', callback_data="request")
 
-                txt = example.order_text(db.get_bats(user_id), text, course_THB, course_rub, rub, usdt)
+                # txt = get_message.get_mess("usdt", False).format(usdt=round(usdt,2), course_thb=c_thb*(2-m), bat=u_bat)
 
                 # Создание клавиатуры с кнопкой "Запросить"
                 keyboard = InlineKeyboardMarkup([[request_button]])
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=txt, reply_markup=keyboard)
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Маража {m}")
                 return
             else:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'🪙 Пожалуйста, выберите способ оплаты \nЭто поможет нам выгоднее для Вас рассчитать курс 📊')
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("please", False))
                 return
 
 
@@ -339,11 +255,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
 
             db.set_state(user_id, 'ожидание_выбора_способа_оплаты')
-            db.set_bats(user_id, int(text))
+            db.set_bats(user_id, float(text))
 
             keyboard = ReplyKeyboardMarkup(keyboards.get_banks(), resize_keyboard=True)
 
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"🪙 Пожалуйста, выберите способ оплаты \nЭто поможет нам выгоднее для Вас рассчитать курс 📊", reply_markup=keyboard)
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("please", False), reply_markup=keyboard)
 
         else:
             if db.check_request:
@@ -353,7 +269,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         username = db.find_name(update.effective_chat.id)
                         await context.bot.send_message(chat_id=ADMIN_ID[0], text=f'Текст от юзера @{username}: {text}')
 
-## Кнопка "Запросить" ###
+## Кнопки ###
 async def button_callback(update: Update, context: CallbackContext, *args, **kwargs):
 
     global admin_course_THB, admin_course_rub
@@ -399,11 +315,12 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         board = InlineKeyboardMarkup([[url_button]])
 
         ## Отправляем сообщение пользователю
-        await context.bot.send_message(chat_id=chat_id, text=f'Ваш ID заказа: {order_id} выполнен! \nБлагодарим за сотрудничество и доверие 🤝', reply_markup=keyboards.get_user_complete())
+        txt = get_message.get_mess("ready", False).format(order_id=order_id)
+        await context.bot.send_message(chat_id=chat_id, text=txt, reply_markup=keyboards.get_user_complete())
 
-        await context.bot.send_message(chat_id=chat_id, text=f'Расскажите, как прошел Ваш заказ и оставьте отзыв \nТак мы становимся лучше для Вас 💚', reply_markup=board)
+        await context.bot.send_message(chat_id=chat_id, text=get_message.get_mess("text_for_order", False), reply_markup=board)
 
-        complete[int(chat_id)] = order_id
+        # complete[int(chat_id)] = order_id
 
         db.set_complete(order_id)
 
@@ -419,47 +336,108 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
         db.set_cancle(order_id)
 
+
+    ### Кнопка "Запросить" ###
     if callback_data == 'request':
 
-        # Отправляем запрос на получение бат
-        await context.bot.send_message(chat_id=query.message.chat_id, text=get_message.get_mess("request_user", False), reply_markup=keyboards.request_user())
-
-        ## Парсим из текста запроса пользоавтеля нужные данные
-        bat, rub, usdt, rub_thb, thb_usdt, trade_method = regexes.user_request(query.message.text)
-
-        ## Получаем чисту цену
-        clean_count = convert.clean(bat, admin_course_THB, admin_course_rub)
-        gain = float(rub)-float(clean_count)
-        gain_bat = round(gain/ (admin_course_rub/admin_course_THB),2)
-        gain_usdt = round(gain/admin_course_rub ,2)
-
-        best_course, best_trade = commex.get_best(float(rub))
 
         ##Создаем ID заказа###
         ids = str(uuid.uuid4())
+        # if db.check_order_id(ids):
+        #     ids = str(uuid.uuid4())
 
-        if db.check_order_id(ids):
-            ids = str(uuid.uuid4())
 
-        user_want_usdt = 10
+        trade_method = re.search(r'по курсу\s+(.+)', query.message.text)
+        if trade_method and trade_method.group(1) == '🟩 USDT':
 
-        mess = f'''
-        ID заказа: {ids}
-@{query.from_user.username} думает получить {bat} бат через {trade_method}
+            course, bat, usdt = regexes.user_request(trade_method, query.message.text)
+            c_thb = c.get('thb')
+            real_usdt = bat/c_thb
+            gain_usdt = usdt - real_usdt
+            gain_bat = gain_usdt*c_thb
 
-Курс для клиента: {rub_thb} ({thb_usdt} бат/USDT ; {round(rub_thb*thb_usdt, 2)} руб/USDT)
+            rub = bat*(c.get('rub')/c_thb)
 
-Реальный Курс: {round(admin_course_rub/admin_course_THB, 2)} ({admin_course_THB} бат/USDT ; {admin_course_rub} руб/USDT)
 
-Сумма оплаты клиентом: {rub} руб. либо {round(rub/(thb_usdt*rub_thb), 2)} USDT
+            best_trade_method = commex.get_best(rub)
+            txt = get_message.get_mess('order_usdt', True).format(id=ids,
+                                                                username=query.from_user.username,
+                                                                bat=bat,
+                                                                client_course_thb=course,
+                                                                real_course_thb=c_thb,
 
-Сумма реальная: {clean_count} руб. ({round(clean_count/admin_course_rub, 2)} USDT)
+                                                                client_usdt=usdt,
+                                                                real_usdt=round(real_usdt,2),
+                                                                gain_bat=round(gain_bat,2),
+                                                                gain_usdt=round(gain_usdt,2),
+                                                                best_trade_method=best_trade_method[1],
+                                                                best_course_rub=best_trade_method[0],
+                                                                best_course_thb_rub="0")
 
-Зарабатываем с этого: {round(gain,2)} руб или {round(gain_bat,2)} бат  или {round(gain_usdt, 2)} USDT
+        elif trade_method and trade_method.group(1) == '💵 Наличные':
+            course_usdt, course_rub, bat, rub, usdt = regexes.user_request(trade_method, query.message.text)
 
-Bitazza для админа: {admin_course_THB}
+            client_thb_rub = float(course_rub)/float(course_usdt)
 
-Самый выгодный способ платежа: {best_trade} {best_course} руб/USDT, {round(best_course/admin_course_THB, 2)} руб/ТНВ'''
+            real_course_thb_rub = (c.get('rub')/c.get('thb'))
+            real_rub = bat*real_course_thb_rub
+            real_usdt = bat/c.get('thb')
+
+            gain_rub = rub-round(real_rub,2)
+            gain_usdt = usdt - round(real_usdt,2)
+
+            best_trade_method = commex.get_best(rub)
+
+            txt = get_message.get_mess('order_cash', True).format(id=ids,
+                                                                username=query.from_user.username,
+                                                                bat=bat,
+                                                                client_thb_rub=round(client_thb_rub,2),
+                                                                client_rub=round(course_rub,2),
+                                                                real_course_thb_rub=round(real_course_thb_rub,2),
+                                                                real_course_rub=c.get('rub'),
+                                                                rub=rub,
+                                                                usdt=usdt,
+                                                                real_rub=round(real_rub,2),
+                                                                real_usdt=round(real_usdt,2),
+                                                                gain_rub=round(gain_rub,2),
+                                                                gain_usdt=round(gain_usdt,2),
+                                                                course_thb=c.get('thb'),
+                                                                best_trade=best_trade_method[1],
+                                                                best_course_rub=best_trade_method[0])
+
+
+
+        else:
+            course, rub, bat = regexes.user_request(trade_method, query.message.text)
+            usdt = rub/c.get('rub')
+
+            real_rub = bat*(c.get('rub')/c.get('thb'))
+            real_usdt = bat/c.get('thb')
+
+            gain_rub = rub-real_rub
+            gain_usdt = usdt-real_usdt
+
+            best_trade_method = commex.get_best(rub)
+
+            real_course_thb_rub = c.get('rub')/c.get('thb')
+
+            txt = get_message.get_mess('order_bank', True).format(id=ids,
+                                                                username=query.from_user.username,
+                                                                bat=bat,
+                                                                trade_method=trade_method.group(1),
+                                                                client_course_rub=course,
+                                                                client_course_thb_rub=course,
+                                                                rub=round(rub,2),
+                                                                usdt=round(usdt,2),
+                                                                real_rub=round(real_rub,2),
+                                                                real_usdt=round(real_usdt,2),
+                                                                gain_rub=round(gain_rub,2),
+                                                                real_course_thb_rub=round(real_course_thb_rub,2),
+                                                                gain_usdt=round(gain_usdt,2),
+                                                                c_thb=c.get('thb'),
+                                                                best_trade={best_trade_method[0]},
+                                                                best_course={best_trade_method[1]}
+                                                                )
 
         db.request_on(query.message.chat_id)
 
@@ -468,15 +446,23 @@ Bitazza для админа: {admin_course_THB}
         # Создание клавиатуры с кнопкой "Запросить"
         keyboard = InlineKeyboardMarkup([[cancle_button], [apply_button]])
 
+        await context.bot.send_message(chat_id=query.message.chat_id, text=get_message.get_mess("request_user", False), reply_markup=keyboards.request_user())
+
         for chat_id in ADMIN_ID:
-            await context.bot.send_message(chat_id=chat_id, text=mess, reply_markup=keyboard)
+            await context.bot.send_message(chat_id=chat_id, text=txt, reply_markup=keyboard)
 
         ### Записываем данные в базу данных ###
-        db.create_order(ids, query.from_user.username, float(rub), clean_count, usdt, rub_thb, marje, gain, trade_method, bat, user_want_usdt)
+        # db.create_order(ids, query.from_user.username, float(rub), clean_count, usdt, rub_thb, marje, gain, trade_method, bat, user_want_usdt)
 
     return True
 
 
+
+
+
+
+
+##Отправка геолокации
 async def handle_geo(update: Update, context: CallbackContext):
     location = update.message.location
     text = geo.geocoder(location.latitude, location.longitude, update.message.chat_id)
@@ -485,6 +471,57 @@ async def handle_geo(update: Update, context: CallbackContext):
         await context.bot.send_message(chat_id=chat_id, text=text)
         ### Выводит карту с геопозицией пользователя ####
         await context.bot.send_location(chat_id=chat_id, longitude=location.longitude, latitude=location.latitude)
+
+############ПАРСИНГ
+async def parse(update, context):
+    user_id = update.effective_user.id
+    if user_id in ADMIN_ID:
+        thread = threading.Thread(target=p.parse_course, args=(update, context))
+        thread.start()
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Вы не админ")
+
+
+
+
+
+
+async def runParser(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id in ADMIN_ID:
+    ##### РАСКОМЕНТИРОВАТЬ
+        lock = threading.Lock()
+
+        def run_scheduler(update, context):
+            # Запуск шедулера каждый час
+            schedule.every(1).hour.do(functools.partial(run_with_lock, p.parse_course, update, context, False))
+
+            # Бесконечный цикл для запуска шедулера
+            while True:
+                schedule.run_pending()
+                time.sleep(10)
+
+        def run_with_lock(func, *args):
+            with lock:
+                func(*args)
+
+        # Создание и запуск потока для шедулера
+        scheduler_thread = threading.Thread(target=run_scheduler, args=(update, context))
+        scheduler_thread.start()
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Парсинг каждый час запущен!")
+
+
+### ИЗМЕНЕНИЕ МАРЖИ
+async def changeMarje(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id in ADMIN_ID:
+        await vm.change_marje(update, context)
+
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Вы не админ")
+
+
+
 
 
 async def error_handler(update, context):
@@ -499,6 +536,20 @@ if __name__ == '__main__':
     start_handler = CommandHandler('start', start)
     application.add_handler(start_handler)
 
+    ##Сразу же парсим курс
+
+    parse_handler = CommandHandler('parse', parse)
+    application.add_handler(parse_handler)
+
+    ##Запускает шедулер каждый час парсинга
+    run_handler = CommandHandler('run', runParser)
+    application.add_handler(run_handler)
+
+    ##Запускает шедулер каждый час парсинга
+    change_marje_handler = CommandHandler('m', changeMarje)
+    application.add_handler(change_marje_handler)
+
+    ##Выбрать юзера для переписки
     user_handler = CommandHandler('user', user_message)
     application.add_handler(user_handler)
 
@@ -508,6 +559,7 @@ if __name__ == '__main__':
     message_handler = MessageHandler(filters.TEXT, handle_message)
     application.add_handler(message_handler)
 
+    ##Поделиться геолокацией
     geo_handler = MessageHandler(filters.LOCATION, handle_geo)
     application.add_handler(geo_handler)
 

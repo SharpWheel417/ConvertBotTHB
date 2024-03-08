@@ -232,14 +232,15 @@ def set_state(chat_id, state):
     conn.commit()
 
 def set_bats(chat_id, bats):
-    q = f"INSERT INTO user_state (bat, chat_id) VALUES ('{bats}', '{chat_id}') ON CONFLICT (chat_id) DO UPDATE SET bat = '{bats}'"
+    q = f"INSERT INTO user_state (bat, chat_id) VALUES ({bats}, '{chat_id}') ON CONFLICT (chat_id) DO UPDATE SET bat = {bats}"
     print(q)
     cur.execute(q)
+    conn.commit()
 
 def get_bats(chat_id):
     cur.execute(f"SELECT bat FROM user_state WHERE chat_id = '{chat_id}'")
     result = cur.fetchone()
     if result:
-        return result[0].replace(" ","")
+        return float(result[0])
     else:
         return None

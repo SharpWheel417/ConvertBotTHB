@@ -1,5 +1,5 @@
 import database.db as db
-from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton
 
 def get_banks():
     banks = db.get_banks('rus')
@@ -72,4 +72,5 @@ def get_admin_inline_buttons_in_progress():
 
 
 def request_user():
-    return ReplyKeyboardMarkup([["Посмотреть банкоматы и сообщить свое местоположение 🏧"], ["🟰 Выбрать сумм"], ["Не делиться ⛔️"]], resize_keyboard=True)
+    share_location_button = KeyboardButton("Посмотреть банкоматы и сообщить свое местоположение 🏧", request_location=True)
+    return ReplyKeyboardMarkup([[share_location_button], ["🟰 Выбрать сумм"], ["Не делиться ⛔️"]], resize_keyboard=True)
