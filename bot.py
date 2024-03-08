@@ -21,12 +21,12 @@ import view.marje as vm
 import view.course as vc
 import view.user_bank as vu
 
-from config import pills
+from config import battle_life
 
-BOT_TOKEN = pills
+BOT_TOKEN = battle_life
 
-# ADMIN_ID = [1194700554, 6920037183]
-ADMIN_ID = [1194700554]
+ADMIN_ID = [1194700554, 6920037183]
+# ADMIN_ID = [1194700554]
 # ADMIN_ID = []
 CHANEL_ID = 'channel4exchange_thai'
 
@@ -120,7 +120,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ##Узнать маржу для админов            
         if text == "Узнать маржу":
            await vm.get_marge(update, context)
-
+            
+            
         ##Для админов
         if text == "Остановить переписку с юзером":
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Переиска с юзером {selected_user_id} остановлена")
