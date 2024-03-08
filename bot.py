@@ -5,6 +5,8 @@ tracemalloc.start()
 import uuid, threading
 from datetime import datetime
 import functools
+import asyncio
+import concurrent.futures
 
 import model.convert as convert, parsing.commex as commex, database.db as db, model.regexes as regexes, parsing.geo as geo, view.keyboards as keyboards, parsing.bitazza as bitazza, model.calc as calc, database.example as example
 
@@ -471,13 +473,17 @@ async def handle_geo(update: Update, context: CallbackContext):
         await context.bot.send_location(chat_id=chat_id, longitude=location.longitude, latitude=location.latitude)
 
 ############ПАРСИНГ
-async def parse(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def parse(update, context):
     user_id = update.effective_user.id
     if user_id in ADMIN_ID:
-        await p.parse_course(update, context)  # Ensure to await the coroutine
-
+        thread = threading.Thread(target=p.parse_course, args=(update, context))
+        thread.start()
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Вы не админ")
+
+
+
+
 
 
 async def runParser(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -531,6 +537,7 @@ if __name__ == '__main__':
     application.add_handler(start_handler)
 
     ##Сразу же парсим курс
+
     parse_handler = CommandHandler('parse', parse)
     application.add_handler(parse_handler)
 
