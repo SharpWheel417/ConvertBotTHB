@@ -1,16 +1,5 @@
-import psycopg2
 import datetime
-
-conn = None
-cur = None
-
-conn = psycopg2.connect(
-host="localhost",
-port=5432,
-database="tg",
-user="admin",
-password="admin")
-cur = conn.cursor()
+from database.connect import cur, conn
 
 class Orders:
     def __init__(self, username, sum, course_thb, course_rub, marje, gain, completed, review, rating):
@@ -214,22 +203,6 @@ def get_count_users():
     cur.execute("SELECT count(*) FROM users")
     result = cur.fetchone()[0]
     return result
-
-def get_state(chat_id):
-    q=f"SELECT state FROM user_state WHERE chat_id = '{chat_id}'"
-    print(q)
-    cur.execute(f"SELECT state FROM user_state WHERE chat_id = '{chat_id}'")
-    result = cur.fetchone()
-    if result:
-        return result[0].replace(" ","")
-    else:
-        return None
-
-def set_state(chat_id, state):
-    q = f"INSERT INTO user_state (state, chat_id) VALUES ('{state}', '{chat_id}') ON CONFLICT (chat_id) DO UPDATE SET state = '{state}'"
-    print(q)
-    cur.execute(q)
-    conn.commit()
 
 def set_bats(chat_id, bats):
     q = f"INSERT INTO user_state (bat, chat_id) VALUES ({bats}, '{chat_id}') ON CONFLICT (chat_id) DO UPDATE SET bat = {bats}"

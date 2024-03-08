@@ -5,15 +5,21 @@ tracemalloc.start()
 import uuid, threading
 from datetime import datetime
 import functools
+import asyncio
+import concurrent.futures
 
-import model.convert as convert, parsing.commex as commex, database.db as db, model.regexes as regexes, parsing.geo as geo, view.keyboards as keyboards, parsing.bitazza as bitazza, model.calc as calc, database.example as example
+import model.convert as convert, parsing.commex as commex, database.db as db, model.regexes as regexes, parsing.geo as geo, view.keyboards as keyboards, parsing.bitazza as bitazza
 
+import view.calculate as calc
 import database.get_message as get_message
 import database.marje as mj
 import database.course as c
+import database.state as s
 import parsing.parse as p
 
 import view.marje as vm
+import view.course as vc
+import view.user_bank as vu
 
 from config import battle_life
 
@@ -26,16 +32,10 @@ CHANEL_ID = 'channel4exchange_thai'
 
 selected_user_id = None
 
-
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
-
-def count_thb_usdt_user(bat):
-    global user_course_THB, usdt_marje
-    return round(float((float(bat)/(float(round(user_course_THB, 2))*(2-usdt_marje)))),2)
-
 
 ##### Команда /user для админа ####
 async def user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -69,7 +69,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     db.add_new_user(user_id, username, user_first_name)
 
-    db.set_state(user_id, '0')
+    s.set_state(user_id, '0')
     db.set_bats(user_id, '0')
 
     ### Админ ###
@@ -94,8 +94,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ### Обычное сообщение ####
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    global user_course_THB, course_THB, user_course_rub, course_rub, usdt_marje, cash_marje, marje, admin_course_rub, admin_course_THB
-
     text = update.message.text
     global selected_user_id
     user_id = update.effective_user.id
@@ -107,15 +105,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if text == 'Заказы':
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Заказы:", reply_markup=keyboards.get_admin_orders())
 
+        if s.get_state(user_id) == "Калькулятор":
+            await calc.calculate(text, user_id, update, context)
+
         ### КАЛЬКУЛЯТОР ###
         if text == 'Калькулятор':
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Калькулятор:", reply_markup=keyboards.get_admin_calculate())
-
-
+            s.set_state(user_id, 'Калькулятор')
+        
         ##Для админов
         if text == "Узнать курс":
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс с Bitazza USDT/THB  : {c.get('thb')} \n \nКурс Bitazza с процентом (0.02): {admin_course_THB*(2-0.02)} \nКурс Bitazza для пользователя (с маржой)  : {user_course_THB*(2-marje)} \n\nКурс рубля к бату: {round(admin_course_rub/admin_course_THB,2)}\n\nКурс rub для пользователей: {user_course_rub} \nКурс rub для пользователей (с маржой): {round(user_course_rub*float(marje),2)} \n Процент маржи для банкоа : {round((marje*100),2)} % || {marje} \nПроцент маржи для USDT: {round(float(usdt_marje)*100, 2)} % || {usdt_marje}  \nПроцент маржи Наличка: {round(float(cash_marje)*100, 2)} % || {cash_marje}")
-            return
+           await vc.get(update, context)
+
+        ##Узнать маржу для админов            
+        if text == "Узнать маржу":
+           await vm.get_marge(update, context)
+            
+            
         ##Для админов
         if text == "Остановить переписку с юзером":
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Переиска с юзером {selected_user_id} остановлена")
@@ -138,32 +144,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         ### Для юзеров ###
         if text == "Узнать курс":
+            await vc.get_user(update, context)
 
-            # user_course_rub = float(user_course_rub)
-            # user_course_THB = float(user_course_THB)
-            # marje = float(marje)
-
-            thb = c.get('thb')
-            rub = c.get('rub')
-            m = mj.get_view()
-            course_rub_marje = rub * m
-            course_thb_marje = thb * (2 - m)
-            course_thb_rub = round(course_rub_marje / course_thb_marje, 2)
-            course_thb_value = round(course_thb_marje, 2)
-
-
-
-            message_text = get_message.get_mess("course", False).format(course_thb_value=course_thb_value, course_thb_rub=course_thb_rub)
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=message_text, reply_markup=keyboards.get_user_base())
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Маржа: {m}, Курс THB: {thb}, Курс RUB: {rub}")
-            return
-
-        elif db.get_state(user_id) == 'ожидание оценки':
+        elif s.get_state(user_id) == 'ожидание оценки':
             # db.set_mark(complete[user_id], text)
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Благодарим за оценку 👍", reply_markup=keyboards.get_user_base())
 
-            db.set_state(user_id, '0')
+            s.set_state(user_id, '0')
             return
 
         # if user_id in complete and complete[user_id] is not None:
@@ -186,73 +174,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if text == "Поделиться геолокацией":
             geo_handler()
         if text == "Не делиться ⛔️":
-            db.set_state(user_id, '0')
+            s.set_state(user_id, '0')
             await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("send_geo", False), reply_markup=keyboards.get_user_base())
             return
 
         ### Для юзеров ###
         if text == "🟰 Выбрать сумму":
-            db.set_state(user_id, '0')
+            s.set_state(user_id, '0')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("take_sum", False), reply_markup=keyboards.get_user_base())
             return
 
         ### Для юзеров ###
         ### После выбора суммы ждем когда пользователь выберет способ оплаты ###
-        elif (db.get_state(user_id) == 'ожидание_выбора_способа_оплаты'):
-
-            if text in db.get_banks('rus'):
-
-                ## Получаем данные из бд
-                c_thb = c.get('thb')
-                c_rub = c.get('rub')
-                u_bat = db.get_bats(user_id)
-
-                # usdt =  u_bat/(2-m)
-
-                if text == '🟩 USDT':
-                    m = mj.get('usdt', db.get_bats(user_id))
-                    client_c_thb = round(c_thb*(2-m),2)
-                    usdt =  u_bat/client_c_thb
-                    txt = get_message.get_mess("usdt", False).format(usdt=round(usdt,2), course_thb=client_c_thb, bat=u_bat)
-
-                elif text == '💵 Наличные':
-                    m = mj.get('cash', db.get_bats(user_id))
-                    rub =  u_bat*((c_rub*m)/(c_thb*(2-m)))
-                    usdt =  u_bat/(c.get('thb')*(2-m))
-                    txt = get_message.get_mess("cash", False).format(course_rub=round(c_rub*(m),2), course_usdt=round(c_thb*(2-m),2), bat=u_bat, rub=round(rub,2), usdt=round(usdt,2))
-
-                else:
-                    m = mj.get('bank',db.get_bats(user_id))
-                    course_thb_bat = c_rub*(m)/c_thb*(2-m)
-                    rub_course = commex.get_by_trade_method(text, u_bat, c_thb, c_rub, m)
-                    rub =  u_bat*((float(rub_course)*m)/(c_thb*(2-m)))
-                    usdt =  u_bat/(2-m)
-                    txt = get_message.get_mess("bank", False).format(course_thb_bat=round(course_thb_bat,2), rub=round(rub,2), bat=u_bat, trade_method=text)
-
-
-                # Создание кнопки "Запросить"
-                request_button = InlineKeyboardButton('Разместить заказ', callback_data="request")
-
-                # txt = get_message.get_mess("usdt", False).format(usdt=round(usdt,2), course_thb=c_thb*(2-m), bat=u_bat)
-
-                # Создание клавиатуры с кнопкой "Запросить"
-                keyboard = InlineKeyboardMarkup([[request_button]])
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=txt, reply_markup=keyboard)
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Маража {m}")
-                return
-            else:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("please", False))
-                return
-
+        elif (s.get_state(user_id) == 'ожидание_выбора_способа_оплаты'):
+            await vu.get(text, update, context)
 
         elif text.isdigit():
 
-            if db.get_state(user_id) == 'ожидание оценки':
-                db.set_state(user_id, '0')
+            if s.get_state(user_id) == 'ожидание оценки':
+                s.set_state(user_id, '0')
                 return
 
-            db.set_state(user_id, 'ожидание_выбора_способа_оплаты')
+            s.set_state(user_id, 'ожидание_выбора_способа_оплаты')
             db.set_bats(user_id, float(text))
 
             keyboard = ReplyKeyboardMarkup(keyboards.get_banks(), resize_keyboard=True)
@@ -471,13 +415,17 @@ async def handle_geo(update: Update, context: CallbackContext):
         await context.bot.send_location(chat_id=chat_id, longitude=location.longitude, latitude=location.latitude)
 
 ############ПАРСИНГ
-async def parse(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def parse(update, context):
     user_id = update.effective_user.id
     if user_id in ADMIN_ID:
-        await p.parse_course(update, context)  # Ensure to await the coroutine
-
+        thread = threading.Thread(target=p.parse_course, args=(update, context))
+        thread.start()
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Вы не админ")
+
+
+
+
 
 
 async def runParser(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -531,6 +479,7 @@ if __name__ == '__main__':
     application.add_handler(start_handler)
 
     ##Сразу же парсим курс
+
     parse_handler = CommandHandler('parse', parse)
     application.add_handler(parse_handler)
 

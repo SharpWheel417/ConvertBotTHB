@@ -1,6 +1,6 @@
 import psycopg2
-import datetime
 
+### ПОДКЛЮЧЕНИЕ К БД
 conn = None
 cur = None
 

@@ -8,7 +8,7 @@
             "name": "Отладчик Python: Текущий файл",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/bot.py",
             "console": "integratedTerminal"
         }
     ]

@@ -30,7 +30,10 @@ def get_view():
 
 
 def set_marje(type: str, count: float, marje: float):
-    q = f"INSERT INTO marje (count, marje, type) VALUES ({count}, {marje}, '{type}') ON CONFLICT (count, type) DO UPDATE SET marje = {marje}"
+    cur.execute("SELECT MAX(id) FROM marje")
+    result = cur.fetchone()
+    id = int(result[0])+1
+    q = f"INSERT INTO marje (id, count, marje, type) VALUES ({id},{count}, {marje}, '{type}') ON CONFLICT (count, type) DO UPDATE SET marje = EXCLUDED.marje;"
     print(q)
     try:
         cur.execute(q)
@@ -38,3 +41,11 @@ def set_marje(type: str, count: float, marje: float):
     except psycopg2.Error as e:
         print("Error executing SQL query:", e)
         conn.rollback()
+        return False 
+    
+
+
+def get_all():
+    q = "SELECT * FROM marje"
+    cur.execute(q)
+    return cur.fetchall()
