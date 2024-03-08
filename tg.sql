@@ -72,7 +72,8 @@ INSERT INTO "marje" ("id", "count", "marje", "type") VALUES
 (21,	100000000,	1.018,	'used                                                                                                                                                                                                                                                           '),
 (22,	100000000,	1.045,	'cash                                                                                                                                                                                                                                                           '),
 (8,	1000,	1.09,	'usdt                                                                                                                                                                                                                                                           '),
-(3,	3000,	1.05,	'bank                                                                                                                                                                                                                                                           ');
+(3,	3000,	1.05,	'bank                                                                                                                                                                                                                                                           '),
+(23,	14,	1.02,	'usdt                                                                                                                                                                                                                                                           ');
 
 DROP TABLE IF EXISTS "orders";
 DROP SEQUENCE IF EXISTS orders_id_seq1;
@@ -260,7 +261,15 @@ Bitazza для админа: {c_thb}
 
 Bitazza для админа: {course_thb}
 
-Самый выгодный способ платежа: {best_trade} {best_course_rub} руб/USDT',	'order_cash                                                                                                                                                                                                                                                     ',	't');
+Самый выгодный способ платежа: {best_trade} {best_course_rub} руб/USDT',	'order_cash                                                                                                                                                                                                                                                     ',	't'),
+(24,	'Курс с Bitazza USDT/THB  : {thb}
+Курс Bitazza для пользователя (с маржой)  : {thb_marje}
+
+Курс рубля к бату: {rub_thb}
+Курс рубля к бату для пользователя (с маржой): {rub_thb_marje}
+
+Курс rub для админа: {rub}
+Курс rub для пользователей (с маржой): {rub_marje}',	'course                                                                                                                                                                                                                                                         ',	't');
 
 DROP TABLE IF EXISTS "user_state";
 DROP SEQUENCE IF EXISTS state_id_seq;
@@ -272,15 +281,17 @@ CREATE TABLE "public"."user_state" (
     "state" character(255),
     "bat" numeric,
     "complete" character(255),
+    "calculate" character(255),
     CONSTRAINT "chat_id_unique_idx" UNIQUE ("chat_id"),
     CONSTRAINT "state_pkey" PRIMARY KEY ("id")
 ) WITH (oids = false);
 
-INSERT INTO "user_state" ("id", "chat_id", "state", "bat", "complete") VALUES
-(213,	'5794240411                                                                                                                                                                                                                                                     ',	'ожидание_выбора_способа_оплаты                                                                                                                                                                                                                                 ',	10000.0,	NULL),
-(83,	'1194700554                                                                                                                                                                                                                                                     ',	'0                                                                                                                                                                                                                                                              ',	0,	NULL),
-(211,	'747612773                                                                                                                                                                                                                                                      ',	'ожидание_выбора_способа_оплаты                                                                                                                                                                                                                                 ',	10000.0,	NULL),
-(147,	'6908096537                                                                                                                                                                                                                                                     ',	'ожидание_выбора_способа_оплаты                                                                                                                                                                                                                                 ',	10000.0,	NULL);
+INSERT INTO "user_state" ("id", "chat_id", "state", "bat", "complete", "calculate") VALUES
+(213,	'5794240411                                                                                                                                                                                                                                                     ',	'ожидание_выбора_способа_оплаты                                                                                                                                                                                                                                 ',	10000.0,	NULL,	NULL),
+(211,	'747612773                                                                                                                                                                                                                                                      ',	'ожидание_выбора_способа_оплаты                                                                                                                                                                                                                                 ',	10000.0,	NULL,	NULL),
+(147,	'6908096537                                                                                                                                                                                                                                                     ',	'ожидание_выбора_способа_оплаты                                                                                                                                                                                                                                 ',	10000.0,	NULL,	NULL),
+(123,	'5480919609                                                                                                                                                                                                                                                     ',	'ожидание_выбора_способа_оплаты                                                                                                                                                                                                                                 ',	10000.0,	NULL,	NULL),
+(83,	'1194700554                                                                                                                                                                                                                                                     ',	'0                                                                                                                                                                                                                                                              ',	0,	NULL,	'0                                                                                                                                                                                                                                                              ');
 
 DROP TABLE IF EXISTS "users";
 DROP SEQUENCE IF EXISTS users_id_seq;
@@ -302,4 +313,4 @@ INSERT INTO "users" ("id", "name", "chat_id", "request") VALUES
 (7,	'NEVINOVEN700                                                                                                                                                                                                                                                   ',	'5794240411                                                                                                                                                                                                                                                     ',	't'),
 (8,	'Xd                                                                                                                                                                                                                                                             ',	'6908096537                                                                                                                                                                                                                                                     ',	't');
 
--- 2024-03-07 08:03:31.611167+00
+-- 2024-03-08 10:13:46.446838+00

@@ -1,10 +1,5 @@
-from telegram import Bot, Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton
-from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters, CallbackQueryHandler, CallbackContext
-import schedule, time, re, tracemalloc, logging
-tracemalloc.start()
-import uuid, threading
-from datetime import datetime
-import functools
+from telegram import Update
+from telegram.ext import ContextTypes
 import database.marje as mj
 
 
@@ -23,3 +18,21 @@ async def change_marje(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Произошла ошибка: {e}")
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Неверное количество аргумент")
+
+
+
+async def get_marge(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    marje = mj.get_all()
+    messages = []
+    message = "Список Маржи:\n"
+    for row in marje:
+        message += f"Сумма: {row[1]}, Мараж: {row[2]}, Тип: {row[3]}\n"
+        if len(message) > 3000:  # Пример максимальной длины сообщения
+            messages.append(message)
+            message = "Список Маржи (продолжение):\n"
+    # Добавить последнее сообщение, если оно не пустое
+    if message:
+        messages.append(message)
+    # Отправить сообщения в телеграмм
+    for msg in messages:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=msg)
