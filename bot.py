@@ -15,12 +15,12 @@ import parsing.parse as p
 
 import view.marje as vm
 
-from config import pills
+from config import battle_life
 
-BOT_TOKEN = pills
+BOT_TOKEN = battle_life
 
-# ADMIN_ID = [1194700554, 6920037183]
-ADMIN_ID = [1194700554]
+ADMIN_ID = [1194700554, 6920037183]
+# ADMIN_ID = [1194700554]
 # ADMIN_ID = []
 CHANEL_ID = 'channel4exchange_thai'
 
@@ -114,7 +114,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         ##Для админов
         if text == "Узнать курс":
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс с Bitazza USDT/THB  : {admin_course_THB} \nКурс Bitazza минимальный за день: {user_course_THB} \nКурс Bitazza с процентом (0.02): {admin_course_THB*(2-0.02)} \nКурс Bitazza для пользователя (с маржой)  : {user_course_THB*(2-marje)} \n\nКурс рубля к бату: {round(admin_course_rub/admin_course_THB,2)}\n\nКурс rub для пользователей: {user_course_rub} \nКурс rub для пользователей (с маржой): {round(user_course_rub*float(marje),2)} \n Процент маржи для банкоа : {round((marje*100),2)} % || {marje} \nПроцент маржи для USDT: {round(float(usdt_marje)*100, 2)} % || {usdt_marje}  \nПроцент маржи Наличка: {round(float(cash_marje)*100, 2)} % || {cash_marje}")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Курс с Bitazza USDT/THB  : {c.get('thb')} \n \nКурс Bitazza с процентом (0.02): {admin_course_THB*(2-0.02)} \nКурс Bitazza для пользователя (с маржой)  : {user_course_THB*(2-marje)} \n\nКурс рубля к бату: {round(admin_course_rub/admin_course_THB,2)}\n\nКурс rub для пользователей: {user_course_rub} \nКурс rub для пользователей (с маржой): {round(user_course_rub*float(marje),2)} \n Процент маржи для банкоа : {round((marje*100),2)} % || {marje} \nПроцент маржи для USDT: {round(float(usdt_marje)*100, 2)} % || {usdt_marje}  \nПроцент маржи Наличка: {round(float(cash_marje)*100, 2)} % || {cash_marje}")
             return
         ##Для админов
         if text == "Остановить переписку с юзером":
@@ -139,8 +139,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ### Для юзеров ###
         if text == "Узнать курс":
 
-            user_course_rub = float(user_course_rub)
-            user_course_THB = float(user_course_THB)
+            # user_course_rub = float(user_course_rub)
+            # user_course_THB = float(user_course_THB)
             # marje = float(marje)
 
             thb = c.get('thb')
