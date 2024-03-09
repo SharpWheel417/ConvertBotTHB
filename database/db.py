@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from database.connect import cur, conn
 
 class Orders:
@@ -25,9 +25,9 @@ def add_new_user(chat_id, name, first_name) -> None:
     # Проверяем, существует ли пользователь с указанным chat_id
     print(f"Проверяем, существет ли пользователь {chat_id}")
     if name is None:
-        name = first_name
+        name = "--"+first_name
     if first_name is None:
-        name = 'unknow_user'
+        name = '--unknow_user'
     cur.execute("SELECT id FROM users WHERE chat_id = '%s'", (chat_id,))
     existing_user = cur.fetchone()
 
@@ -41,6 +41,16 @@ def add_new_user(chat_id, name, first_name) -> None:
         conn.commit()  # Не забудьте подтвердить транзакцию, если требуется
 
 
+def get_chat_id(name: str) -> str:
+    'Поиск пользователя по имени'
+    name_clean =  name.replace("@", "").strip()
+    cur.execute("SELECT chat_id FROM users WHERE name = %s", (name_clean,))
+    result = cur.fetchone()
+    if result:
+        return result[0]
+    else:
+        return None
+    
 def get_chat_id(name: str) -> str:
     'Поиск пользователя по имени'
     name_clean =  name.replace("@", "").strip()
@@ -129,10 +139,16 @@ def get_trade_methods():
         tm[key] = value
     return tm
 
-def create_order(ids, username, user_pay, admin_pay, course_thb, course_rub, marje, gain, tradeMethod, user_bat, user_usdt):
-    set = f"INSERT INTO orders (ids, username, user_pay, admin_pay, course_thb, course_rub, marje, gain, trade_method, completed, date, user_bat, user_usdt) VALUES ('{ids}', '{username}', {user_pay}, {admin_pay}, {course_thb}, {course_rub}, {marje}, {gain}, '{tradeMethod}', 'request', '{datetime.datetime.now()}', {user_bat}, {user_usdt})"
+def create_order(ids, username, chat_id, user_bat, user_rub, user_usdt, marje, gain_rub, gain_usdt, trade_method):
+    date = datetime.now()
+    set = f"INSERT INTO orders (ids, username, chat_id, user_bat, user_rub, user_usdt, marje, gain_rub, gain_usdt, trade_method, completed, date) VALUES ('{ids}', '{username}', '{chat_id}', {user_bat}, {user_rub}, {user_usdt}, {marje}, {gain_rub}, {gain_usdt}, '{trade_method}', 'progress', '{date}')"
     print(set)
     cur.execute(set)
+    conn.commit()
+
+def update_order(ids, completed):
+    update_query = "UPDATE orders SET completed = %s WHERE ids = %s"
+    cur.execute(update_query, (completed, ids))
     conn.commit()
 
 def check_order_id(id:str):
@@ -143,18 +159,6 @@ def check_order_id(id:str):
     else:
         return False
 
-
-def set_progress(ids: str):
-    cur.execute("UPDATE orders SET completed = 'progress' WHERE ids = %s", (ids,))
-    conn.commit()
-
-def set_cancle(ids: str):
-    cur.execute("UPDATE orders SET completed = 'cancle' WHERE ids = %s", (ids,))
-    conn.commit()
-
-def set_complete(ids: str):
-    cur.execute("UPDATE orders SET completed = 'complete' WHERE ids = %s", (ids,))
-    conn.commit()
 
 def set_mark(ids: str, mark):
     cur.execute(f"UPDATE orders SET mark = {mark} WHERE ids = '{ids}'",)

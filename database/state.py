@@ -28,3 +28,12 @@ def get_state_calc(chat_id):
         return result[0].replace(" ","")
     else:
         return None
+    
+
+def get_order(chat_id):
+    cur.execute(f"SELECT order FROM users WHERE chat_id = '{chat_id}'")
+    result = cur.fetchone()
+    if result:
+        return result[0].replace(" ","")
+    else:
+        return None
