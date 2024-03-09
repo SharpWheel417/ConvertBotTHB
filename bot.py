@@ -23,12 +23,12 @@ import view.user_bank as vu
 import view.stats as vs
 import view.orders as vo
 
-from config import pills
+from config import battle_life
 
-BOT_TOKEN = pills
+BOT_TOKEN = battle_life
 
-# ADMIN_ID = [1194700554, 6920037183]
-ADMIN_ID = [1194700554]
+ADMIN_ID = [1194700554, 6920037183]
+# ADMIN_ID = [1194700554]
 # ADMIN_ID = []
 CHANEL_ID = 'channel4exchange_thai'
 
@@ -390,7 +390,11 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
 
             username = query.from_user.username
             if query.from_user.username is None:
-                username = "--"+query.from_user.first_name+" "+query.from_user.last_name
+                if query.from_user.last_name is None:
+                    username = "--"+query.from_user.first_name
+                else:
+                    username = "--"+query.from_user.first_name+" "+query.from_user.last_name
+
 
             db.create_order(ids, username, query.message.chat_id, bat, rub, usdt, course, gain_rub, gain_usdt, trade_method.group(1))
 
