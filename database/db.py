@@ -50,7 +50,7 @@ def get_chat_id(name: str) -> str:
         return result[0]
     else:
         return None
-    
+
 def get_chat_id(name: str) -> str:
     'Поиск пользователя по имени'
     name_clean =  name.replace("@", "").strip()
@@ -169,7 +169,7 @@ def set_review(ids:str, rev: str) -> None:
     conn.commit()
 
 def get_orders_in_progress():
-    cur.execute("SELECT * FROM orders WHERE completed = 'in progress'")
+    cur.execute("SELECT * FROM orders WHERE completed = 'in_progress'")
     result = cur.fetchall()
     return result
 

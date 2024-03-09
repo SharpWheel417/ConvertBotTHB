@@ -9,7 +9,7 @@ async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Запросы отсутствуют")
         else:
             for i in orders:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'ID заказа: {i[13]} \nОт {i[12]} \nПользователь: @{i[1]}', reply_markup=keyboards.get_admin_inline_buttons())
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'ID заказа: {i[1]} \nОт {i[12]} \nПользователь: @{i[2]}', reply_markup=keyboards.get_admin_inline_buttons())
 
 
     if text == 'В работе':
@@ -18,7 +18,7 @@ async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Заказы в работе отсутствуют")
         else:
             for i in orders:
-                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'ID заказа: {i[13]} \nОт {i[12]} \nПользователь: @{i[1]}', reply_markup=keyboards.get_admin_inline_buttons_in_progress())
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=f'ID заказа: {i[1]} \nОт {i[12]} \nПользователь: @{i[2]}', reply_markup=keyboards.get_admin_inline_buttons_in_progress())
 
     if text == 'Выполненные':
         orders = db.get_orders_complete()
@@ -27,7 +27,7 @@ async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             text = ''
             for i in orders:
-                text += f'ID заказа: {i[13]} \nПользователь: @{i[1]} \n\n'
+                text += f'ID заказа: {i[1]} \nПользователь: @{i[2]} \n\n'
             await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
     if text == 'Отмененные':
@@ -37,5 +37,5 @@ async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             text = 'Отмененные\n'
             for i in orders:
-                text += f'ID заказа: {i[13]} \nПользователь: @{i[1]} \n\n'
+                text += f'ID заказа: {i[1]} \nПользователь: @{i[2]} \n\n'
             await context.bot.send_message(chat_id=update.effective_chat.id, text=text)
