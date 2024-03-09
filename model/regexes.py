@@ -23,6 +23,7 @@ def user_request(type:str, string: str) -> tuple:
         return float(exchange), float(bat), float(usdt)
 
     if type and type.group(1) == '💵 Наличные':
+      
         course_usd_match = re.search(r'Курс USD: (\d+\.\d+)\$', string)
         if course_usd_match:
             course_usd = course_usd_match.group(1)
@@ -75,6 +76,7 @@ def user_request(type:str, string: str) -> tuple:
             rub = rub_match.group(1)
         else:
             rub="0"
+
         return float(course), float(rub), float(bat)
 
 

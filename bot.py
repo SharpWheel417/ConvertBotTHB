@@ -20,6 +20,8 @@ import parsing.parse as p
 import view.marje as vm
 import view.course as vc
 import view.user_bank as vu
+import view.stats as vs
+import view.orders as vo
 
 from config import pills
 
@@ -103,7 +105,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=update.effective_chat.id, text='На главную', reply_markup=keyboards.get_admin_base())
 
         if text == 'Заказы':
+            s.set_state(user_id, 'Заказы')
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Заказы:", reply_markup=keyboards.get_admin_orders())
+
+        if text == 'Статистика':
+            s.set_state(user_id, 'Статистика')
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Статистика:", reply_markup=keyboards.get_admin_stats())
+
+
+        if s.get_state(user_id) == "Заказы":
+            await vo.get(text, update, context)
+
+        if s.get_state(user_id) == "Статистика":
+            await vs.get(text, update, context)
 
         if s.get_state(user_id) == "Калькулятор":
             await calc.calculate(text, user_id, update, context)
@@ -112,12 +126,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if text == 'Калькулятор':
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Калькулятор:", reply_markup=keyboards.get_admin_calculate())
             s.set_state(user_id, 'Калькулятор')
-        
+
         ##Для админов
         if text == "Узнать курс":
            await vc.get(update, context)
 
-        ##Узнать маржу для админов            
+        ##Узнать маржу для админов
         if text == "Узнать маржу":
            await vm.get_marge(update, context)
             

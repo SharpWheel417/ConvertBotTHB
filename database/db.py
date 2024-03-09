@@ -169,17 +169,17 @@ def set_review(ids:str, rev: str) -> None:
     conn.commit()
 
 def get_orders_in_progress():
-    cur.execute("SELECT * FROM orders WHERE completed = 'progress'")
+    cur.execute("SELECT * FROM orders WHERE completed = 'in progress'")
     result = cur.fetchall()
     return result
 
 def get_orders_complete():
-    cur.execute("SELECT * FROM orders WHERE completed = 'complete'")
+    cur.execute("SELECT * FROM orders WHERE completed = 'completed'")
     result = cur.fetchall()
     return result
 
 def get_orders_request():
-    cur.execute("SELECT * FROM orders WHERE completed = 'request'")
+    cur.execute("SELECT * FROM orders WHERE completed = 'progress'")
     result = cur.fetchall()
     return result
 
@@ -189,24 +189,26 @@ def get_orders_cancle():
     return result
 
 def get_ready():
-    cur.execute("SELECT count(*) FROM orders WHERE completed = 'complete'")
+    cur.execute("SELECT count(*) FROM orders WHERE completed = 'completed'")
     count = cur.fetchone()[0]
     return count
 
 def get_revenue():
-    cur.execute("SELECT sum(gain) FROM orders WHERE completed = 'complete'")
+    cur.execute("SELECT sum(gain_rub) FROM orders WHERE completed = 'completed'")
     result = cur.fetchone()[0]
-    return result
+    return round(float(result),2)
 
 def get_marks():
-    cur.execute("SELECT avg(mark) FROM orders WHERE completed = 'complete'")
+    cur.execute("SELECT avg(mark) FROM orders WHERE completed = 'completed'")
     result = cur.fetchone()[0]
-    return round(result, 2)
+    if result:
+        return round(float(result),2)
+    else:
+        return 0
 
-def get_count_users():
-    cur.execute("SELECT count(*) FROM users")
-    result = cur.fetchone()[0]
-    return result
+def get_users():
+    cur.execute("SELECT * FROM users")
+    return cur.fetchall()
 
 def set_bats(chat_id, bats):
     q = f"INSERT INTO user_state (bat, chat_id) VALUES ({bats}, '{chat_id}') ON CONFLICT (chat_id) DO UPDATE SET bat = {bats}"
