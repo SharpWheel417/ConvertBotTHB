@@ -67,7 +67,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global user_course_rub, user_course_THB
     user_id = update.effective_user.id
     username = update.effective_user.username
-    user_fio = update.effective_user.first_name + " " + update.effective_user.last_name
+    if update.effective_user.last_name is None:
+        user_fio = update.effective_user.first_name
+    else:
+        user_fio = update.effective_user.first_name + " " + update.effective_user.last_name
 
     db.add_new_user(user_id, username, user_fio)
 
@@ -134,8 +137,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ##Узнать маржу для админов
         if text == "Узнать маржу":
            await vm.get_marge(update, context)
-            
-            
+
+
         ##Для админов
         if text == "Остановить переписку с юзером":
             await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Переиска с юзером {selected_user_id} остановлена")
@@ -160,6 +163,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if text == "Узнать курс":
             await vc.get_user(update, context)
 
+
+        if s.get_state(user_id) == 'ожидание_оценки':
+
+             if text == 'Поставить оценку':
+                s.set_state(user_id, 'ожидание_оценки')
+                await context.bot.send_message(chat_id=update.effective_chat.id, text='Оцените работу нашего сервиса от 1 до 5 баллов', reply_markup=keyboards.get_user_marks())
+                return
+
         elif s.get_state(user_id) == 'ожидание_оценки':
             # db.set_mark(complete[user_id], text)
 
@@ -167,19 +178,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             s.set_state(user_id, '0')
             return
-
-        if s.get_state(user_id) == 'ожидание_оценки':
-
-             if text == 'Поставить оценку':
-                db.set_state(user_id, 'ожидание_оценки')
-                await context.bot.send_message(chat_id=update.effective_chat.id, text='Оцените работу нашего сервиса от 1 до 5 баллов', reply_markup=keyboards.get_user_marks())
-                return
-
-             if text == 'Оставить отзыв':
-                db.set_state(user_id, 'ожидание_оценки')
-                await context.bot.send_message(chat_id=update.effective_chat.id, text='Напишиет отзыв на нашу работу', reply_markup=None)
-                return
-
 
         if text == "Своя сумма":
             await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("my_sum", False))
@@ -195,7 +193,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ### Для юзеров ###
         if text == "🟰 Выбрать сумму":
             s.set_state(user_id, '0')
-
             await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("take_sum", False), reply_markup=keyboards.get_user_base())
             return
 
@@ -208,6 +205,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if s.get_state(user_id) == 'ожидание_оценки':
                 s.set_state(user_id, '0')
+                # db.set_mark(user_id, text)
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("thanks",False), reply_markup=keyboards.get_user_base())
                 return
 
             s.set_state(user_id, 'ожидание_выбора_способа_оплаты')

@@ -36,6 +36,8 @@ async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
             m = mj.get('bank',db.get_bats(user_id))
             course_thb_bat = c_rub*(m)/c_thb*(2-m)
             rub_course = commex.get_by_trade_method(text, u_bat, c_thb, c_rub, m)
+            if rub_course is None:
+                rub_course = c.get('rub')
             rub =  u_bat*((float(rub_course)*m)/(c_thb*(2-m)))
             usdt =  u_bat/(2-m)
             txt = get_message.get_mess("bank", False).format(course_thb_bat=round(course_thb_bat,2), rub=round(rub,2), bat=u_bat, trade_method=text)
@@ -50,7 +52,7 @@ async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=update.effective_chat.id, text=txt, reply_markup=keyboard)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Маража {m}")
         return
-    
+
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("please", False))
         return
