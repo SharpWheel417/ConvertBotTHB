@@ -1,0 +1,67 @@
+Date: 2024-02-12 17:43:36, course_THB: 35.787, admin_course_THB: 35.787, user_course_THB: 35.787, course_THB: 35.787
+ admin_course_rub: 92.37, user_course_THB: 92.37
+Date: 2024-02-12 18:44:17, course_THB: 35.757, admin_course_THB: 35.757, user_course_THB: 35.757, course_THB: 35.757
+ admin_course_rub: 92.44, user_course_THB: 92.44
+Date: 2024-02-12 20:45:38, course_THB: 35.646, admin_course_THB: 35.646, user_course_THB: 35.646, course_THB: 35.646
+ admin_course_rub: 92.45, user_course_THB: 92.45
+Date: 2024-02-12 21:46:16, course_THB: 35.652, admin_course_THB: 35.652, user_course_THB: 35.652, course_THB: 35.652
+ admin_course_rub: 92.49, user_course_THB: 92.49
+Date: 2024-02-13 00:48:42, course_THB: 35.678, admin_course_THB: 35.678, user_course_THB: 35.678, course_THB: 35.678
+ admin_course_rub: 92.59, user_course_THB: 92.59
+Date: 2024-02-13 01:49:20, course_THB: 35.69, admin_course_THB: 35.69, user_course_THB: 35.69, course_THB: 35.69
+ admin_course_rub: 92.52, user_course_THB: 92.52
+Date: 2024-02-13 02:50:00, course_THB: 35.712, admin_course_THB: 35.712, user_course_THB: 35.712, course_THB: 35.712
+ admin_course_rub: 92.66, user_course_THB: 92.66
+Date: 2024-02-13 03:50:38, course_THB: 35.77, admin_course_THB: 35.77, user_course_THB: 35.77, course_THB: 35.77
+ admin_course_rub: 92.72, user_course_THB: 92.72
+Date: 2024-02-13 04:51:16, course_THB: 35.651, admin_course_THB: 35.651, user_course_THB: 35.651, course_THB: 35.651
+ admin_course_rub: 92.62, user_course_THB: 92.62
+Date: 2024-02-13 06:52:35, course_THB: 35.84, admin_course_THB: 35.84, user_course_THB: 35.84, course_THB: 35.84
+ admin_course_rub: 92.47, user_course_THB: 92.47
+Date: 2024-02-13 07:53:16, course_THB: 35.806, admin_course_THB: 35.806, user_course_THB: 35.806, course_THB: 35.806
+ admin_course_rub: 92.5, user_course_THB: 92.5
+Date: 2024-02-13 08:53:56, course_THB: 35.728, admin_course_THB: 35.728, user_course_THB: 35.728, course_THB: 35.728
+ admin_course_rub: 92.53, user_course_THB: 92.53
+Date: 2024-02-13 09:54:35, course_THB: 35.53, admin_course_THB: 35.53, user_course_THB: 35.53, course_THB: 35.53
+ admin_course_rub: 92.5, user_course_THB: 92.5
+Date: 2024-02-13 10:55:13, course_THB: 35.78, admin_course_THB: 35.78, user_course_THB: 35.78, course_THB: 35.78
+ admin_course_rub: 92.54, user_course_THB: 92.54
+Date: 2024-02-13 11:55:52, course_THB: 35.715, admin_course_THB: 35.715, user_course_THB: 35.715, course_THB: 35.715
+ admin_course_rub: 92.54, user_course_THB: 92.54
+Date: 2024-02-13 15:01:19, course_THB: 35.814, admin_course_THB: 35.814, user_course_THB: 35.814, course_THB: 35.814
+ admin_course_rub: 92.37, user_course_THB: 92.37
+Date: 2024-02-13 16:01:56, course_THB: 35.648, admin_course_THB: 35.648, user_course_THB: 35.648, course_THB: 35.648
+ admin_course_rub: 92.37, user_course_THB: 92.37
+Date: 2024-02-13 17:06:04, course_THB: 35.758, admin_course_THB: 35.758, user_course_THB: 35.758, course_THB: 35.758
+ admin_course_rub: 92.39, user_course_THB: 92.39
+Date: 2024-02-13 18:06:42, course_THB: 35.86, admin_course_THB: 35.86, user_course_THB: 35.86, course_THB: 35.86
+ admin_course_rub: 92.34, user_course_THB: 92.34
+Date: 2024-02-13 19:10:50, course_THB: 35.92, admin_course_THB: 35.92, user_course_THB: 35.92, course_THB: 35.92
+ admin_course_rub: 92.38, user_course_THB: 92.38
+Date: 2024-02-13 20:14:57, course_THB: 35.817, admin_course_THB: 35.817, user_course_THB: 35.817, course_THB: 35.817
+ admin_course_rub: 92.38, user_course_THB: 92.38
+Date: 2024-02-13 21:19:05, course_THB: 35.819, admin_course_THB: 35.819, user_course_THB: 35.819, course_THB: 35.819
+ admin_course_rub: 92.45, user_course_THB: 92.45
+Date: 2024-02-13 22:23:12, course_THB: 35.948, admin_course_THB: 35.948, user_course_THB: 35.948, course_THB: 35.948
+ admin_course_rub: 92.37, user_course_THB: 92.37
+Date: 2024-02-13 23:27:20, course_THB: 35.968, admin_course_THB: 35.968, user_course_THB: 35.968, course_THB: 35.968
+ admin_course_rub: 92.41, user_course_THB: 92.41
+Date: 2024-02-14 00:31:28, course_THB: 35.86, admin_course_THB: 35.86, user_course_THB: 35.86, course_THB: 35.86
+ admin_course_rub: 92.49, user_course_THB: 92.49
+Date: 2024-02-14 01:35:35, course_THB: 35.925, admin_course_THB: 35.925, user_course_THB: 35.925, course_THB: 35.925
+ admin_course_rub: 92.43, user_course_THB: 92.43
+Date: 2024-02-14 03:43:51, course_THB: 36.006, admin_course_THB: 36.006, user_course_THB: 36.006, course_THB: 36.006
+ admin_course_rub: 92.52, user_course_THB: 92.52
+Date: 2024-02-14 04:47:58, course_THB: 36.095, admin_course_THB: 36.095, user_course_THB: 36.095, course_THB: 36.095
+ admin_course_rub: 92.48, user_course_THB: 92.48
+Date: 2024-02-14 06:56:14, course_THB: 36.007, admin_course_THB: 36.007, user_course_THB: 36.007, course_THB: 36.007
+ admin_course_rub: 92.52, user_course_THB: 92.52
+Date: 2024-02-14 07:56:52, course_THB: 35.965, admin_course_THB: 35.965, user_course_THB: 35.965, course_THB: 35.965
+ admin_course_rub: 92.47, user_course_THB: 92.47
+Date: 2024-02-14 08:57:30, course_THB: 35.904, admin_course_THB: 35.904, user_course_THB: 35.904, course_THB: 35.904
+ admin_course_rub: 92.45, user_course_THB: 92.45
+Date: 2024-03-06 15:58:14, course_THB: 35.81, admin_course_THB: 35.81, user_course_THB: 35.81, course_THB: 35.81
+ admin_course_rub: 93.74, user_course_THB: 93.74
+Date: 2024-03-06 16:32:02, THB: 35.817, 
+ RUB: 93.71Date: 2024-03-07 16:26:59, THB: 35.719, 
+ RUB: 93.54

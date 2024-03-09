@@ -1,16 +1,5 @@
-import psycopg2
 import datetime
-
-conn = None
-cur = None
-
-conn = psycopg2.connect(
-host="localhost",
-port=5432,
-database="tg",
-user="admin",
-password="admin")
-cur = conn.cursor()
+from database.connect import cur, conn
 
 class Orders:
     def __init__(self, username, sum, course_thb, course_rub, marje, gain, completed, review, rating):
@@ -23,17 +12,34 @@ class Orders:
         self.completed = completed
         self.review = review
         self.rating = rating
-    
+
 def check_user_exists(chat_id) -> bool:
     'Проверяем наличие пользователя в бд r: true/false'
-    cur.execute("SELECT * FROM users WHERE chat_id = '%s'", (chat_id,))
+    q = "SELECT * FROM users WHERE chat_id = '%s'"
+    cur.execute(q, (chat_id,))
     result = cur.fetchone()
     return bool(result)
 
-def add_new_user(chat_id, name) -> None:
+def add_new_user(chat_id, name, first_name) -> None:
     'Добавляем пользователя в бд'
-    cur.execute("INSERT INTO users (name, chat_id) VALUES (%s, %s)", (name, chat_id))
-    conn.commit()
+    # Проверяем, существует ли пользователь с указанным chat_id
+    print(f"Проверяем, существет ли пользователь {chat_id}")
+    if name is None:
+        name = first_name
+    if first_name is None:
+        name = 'unknow_user'
+    cur.execute("SELECT id FROM users WHERE chat_id = '%s'", (chat_id,))
+    existing_user = cur.fetchone()
+
+    # Если пользователь существует, не выполняем вставку
+    if existing_user:
+        print("Пользователь с таким chat_id уже существует")
+    else:
+        # Вставляем пользователя, если он не существует
+        print("Новый пользователь добавлен")
+        cur.execute("INSERT INTO users (name, chat_id) VALUES (%s, %s)", (name, chat_id))
+        conn.commit()  # Не забудьте подтвердить транзакцию, если требуется
+
 
 def get_chat_id(name: str) -> str:
     'Поиск пользователя по имени'
@@ -44,7 +50,7 @@ def get_chat_id(name: str) -> str:
         return result[0]
     else:
         return None
-    
+
 def find_name(chat_id) -> str:
     'Поиск имени пользователя по chat_id'
     cur.execute("SELECT name FROM users WHERE chat_id = '%s'", (chat_id,))
@@ -53,7 +59,7 @@ def find_name(chat_id) -> str:
         return result[0]
     else:
         return None
-    
+
 def request_on(chat_id) -> None:
     cur.execute("UPDATE users SET request = TRUE WHERE chat_id = '%s'", (chat_id,))
     conn.commit()
@@ -79,7 +85,7 @@ def get_logo_text():
         return result[0]
     else:
         return None
-    
+
 def get_info_text():
     'Получаем приветсвенный текст из БД'
     cur.execute("SELECT text FROM state_data WHERE type='info'")
@@ -88,7 +94,7 @@ def get_info_text():
         return result[0]
     else:
         return None
-    
+
 def get_review_link():
     'Получаем строку из бд ("Summer_Death")'
     cur.execute("SELECT text FROM state_data WHERE type='review_link'")
@@ -97,7 +103,7 @@ def get_review_link():
         return result[0]
     else:
         return None
-    
+
 def get_banks(language: str):
     '''
     language: 'rus' or 'eng'
@@ -136,7 +142,7 @@ def check_order_id(id:str):
         return True
     else:
         return False
-    
+
 
 def set_progress(ids: str):
     cur.execute("UPDATE orders SET completed = 'progress' WHERE ids = %s", (ids,))
@@ -180,7 +186,7 @@ def get_orders_cancle():
 
 def get_ready():
     cur.execute("SELECT count(*) FROM orders WHERE completed = 'complete'")
-    count = cur.fetchone()[0] 
+    count = cur.fetchone()[0]
     return count
 
 def get_revenue():
@@ -197,3 +203,17 @@ def get_count_users():
     cur.execute("SELECT count(*) FROM users")
     result = cur.fetchone()[0]
     return result
+
+def set_bats(chat_id, bats):
+    q = f"INSERT INTO user_state (bat, chat_id) VALUES ({bats}, '{chat_id}') ON CONFLICT (chat_id) DO UPDATE SET bat = {bats}"
+    print(q)
+    cur.execute(q)
+    conn.commit()
+
+def get_bats(chat_id):
+    cur.execute(f"SELECT bat FROM user_state WHERE chat_id = '{chat_id}'")
+    result = cur.fetchone()
+    if result:
+        return float(result[0])
+    else:
+        return None
