@@ -7,6 +7,8 @@ import model.calc as calc
 # admin panel
 async def calculate(text: str, user_id: int, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
+#     print(s.get_state_calc(user_id))
+
     if text == "Бат в руб":
             # Устанавливаем состояние в 'ожидание числа для изменения курса'
             s.set_state_calc(user_id, 'бат_в_руб')
