@@ -43,7 +43,7 @@ def get_admin_orders():
 
 def get_admin_courses():
     return ReplyKeyboardMarkup(
-            [['Изменить курс рубля', 'Изменить курс Bitazza'], ["Изменить процент маржи для банков", 'Изменить процент маржи для USDT', 'Изменить процент маржи для налички'], ['Главное меню']],
+            [['Изменить курс рубля', 'Изменить курс usdt']],
             resize_keyboard=True)
 
 def get_user_complete():

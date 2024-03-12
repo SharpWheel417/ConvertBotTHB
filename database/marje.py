@@ -11,8 +11,8 @@ def get(type: str, bat: int) -> Decimal:
     else:
         type = "bank"
 
-    q = "SELECT marje FROM marje WHERE count >= %s AND type = %s LIMIT 1"
-    cur.execute(q, (bat, type))
+    q = "SELECT marje FROM marje WHERE type=%s ORDER BY ABS(count - %s) LIMIT 1"
+    cur.execute(q, (type, bat))
     result = cur.fetchone()
     if result:
         return float(result[0].quantize(Decimal('0.001')))
@@ -41,11 +41,11 @@ def set_marje(type: str, count: float, marje: float):
     except psycopg2.Error as e:
         print("Error executing SQL query:", e)
         conn.rollback()
-        return False 
-    
+        return False
+
 
 
 def get_all():
-    q = "SELECT * FROM marje"
+    q = "SELECT * FROM marje ORDER BY id"
     cur.execute(q)
     return cur.fetchall()

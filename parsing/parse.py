@@ -11,29 +11,30 @@ import database.course as c
 
 file_name = "course_THB_data.txt"
 
-def parse_course(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def parse_course(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Получение курса...")
+    fine = False
+
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Пxолучение курса...")
 
     rub = commex.get_average()
     c.set('rub', rub)
     print("Average:", rub)
-
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f"Рубль: {rub}\nПолучаем Bitazza....\n(долго, может больше 2 минут)")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Рубль: {rub}\nПолучаем Bitazza....\n(долго, может больше 2 минут)")
 
     thb = bitazza.get_currency()
     print("Новый курс битаззы: ", thb)
     if thb == 'error':
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Не смогли получить Bitazza")
         print("Ошибка парсинга битаззы")
-        context.bot.send_message(chat_id=update.effective_chat.id, text=f"Не смогли получить Bitazza")
         return
     else:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Получили Bitazza: {thb}")
         c.set('thb', thb)
-
+        fine=True
 
     txt = get_message.get_mess('parse_course', True).format(thb=thb, rub=rub)
-    context.bot.send_message(chat_id=update.effective_chat.id, text=txt)
-
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=txt)
 
     ###Запись логов в файл
     file = open(file_name, 'a')
@@ -42,3 +43,5 @@ def parse_course(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Данные успешно записаны в файл:", file_name)
     file.close()
     print("Курс сейча: ", thb)
+
+    return fine

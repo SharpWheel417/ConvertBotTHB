@@ -22,10 +22,11 @@ import view.course as vc
 import view.user_bank as vu
 import view.stats as vs
 import view.orders as vo
+import view.changeCourse as vcc
 
-from config import battle_life
+from config import pills
 
-BOT_TOKEN = battle_life
+BOT_TOKEN = pills
 
 ADMIN_ID = [1194700554, 6920037183]
 # ADMIN_ID = [1194700554]
@@ -138,6 +139,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if text == "Узнать маржу":
            await vm.get_marge(update, context)
 
+        if s.get_state(user_id) == 'изменить_курс_руб' or s.get_state(user_id) == 'изменить_курс_usdt':
+            await vcc.changeCourse(text, s.get_state(user_id), update, context)
+
+        if text == "Изменить курс" or text == "Изменить курс рубля" or text == "Изменить курс usdt":
+            await vcc.main(text, update, context)
+
 
         ##Для админов
         if text == "Остановить переписку с юзером":
@@ -208,6 +215,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # db.set_mark(user_id, text)
                 await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("thanks",False), reply_markup=keyboards.get_user_base())
                 return
+
+
 
             s.set_state(user_id, 'ожидание_выбора_способа_оплаты')
             db.set_bats(user_id, float(text))
@@ -450,8 +459,18 @@ async def handle_geo(update: Update, context: CallbackContext):
 async def parse(update, context):
     user_id = update.effective_user.id
     if user_id in ADMIN_ID:
-        thread = threading.Thread(target=p.parse_course, args=(update, context))
-        thread.start()
+
+        await p.parse_course(update, context)
+
+
+        # loop = asyncio.get_event_loop()
+        # await loop.run_in_executor(None, p.parse_course, update, context)
+
+        # thread = await threading.Thread(target=p.parse_course, args=(update, context))
+        # thread.start()
+
+        # await asyncio.get_event_loop().run_in_executor(None, p.parse_course, update, context)
+
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Вы не админ")
 
