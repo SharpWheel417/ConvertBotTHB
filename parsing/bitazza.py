@@ -17,7 +17,7 @@ def get_currency() -> str:
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
 
-        user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
         chrome_options.add_argument(f"user-agent={user_agent}")
 
         driver = webdriver.Chrome(options=chrome_options)
@@ -27,12 +27,12 @@ def get_currency() -> str:
         driver.get(url)
 
         print(driver.title)
-        
+
 
         elementCords = driver.execute_script(
     """return (()=>{let b = null;while(b === null){b=document.querySelector('div.instrument-selector-popover__popover > button')}b.click();for (let i of document.querySelectorAll('img[alt="product icon"]')){if(i.parentElement.textContent==='USDT/THB'){return i.parentElement.parentElement.parentElement}}})();""")
 
-    
+
         if elementCords is None:
             return 'error'
         else:
@@ -45,13 +45,12 @@ def get_currency() -> str:
                 return float(value[0].strip())
                 driver.quit()
             driver.implicitly_wait(1)
-        
+
         driver.quit()
         return 'error'
-    
+
     except WebDriverException as e:
         print(f"An error occurred: {e}")
         return 'error'
 
 # print(get_currency())
-

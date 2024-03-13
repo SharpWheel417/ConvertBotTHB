@@ -460,14 +460,14 @@ async def parse(update, context):
     user_id = update.effective_user.id
     if user_id in ADMIN_ID:
 
-        await p.parse_course(update, context)
+        # p.parse_course(update, context)
 
 
         # loop = asyncio.get_event_loop()
         # await loop.run_in_executor(None, p.parse_course, update, context)
 
-        # thread = await threading.Thread(target=p.parse_course, args=(update, context))
-        # thread.start()
+        thread = threading.Thread(target=p.parse_course, args=(update, context))
+        thread.start()
 
         # await asyncio.get_event_loop().run_in_executor(None, p.parse_course, update, context)
 

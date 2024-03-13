@@ -2,7 +2,10 @@ from telegram import Bot, Update
 from telegram.ext import ApplicationBuilder, ContextTypes
 from datetime import datetime
 from typing import Any, Coroutine
+import asyncio
+import requests
 
+import config
 import parsing.commex as commex, parsing.bitazza as bitazza
 import database.get_message as get_message
 import database.course as c
@@ -11,30 +14,32 @@ import database.course as c
 
 file_name = "course_THB_data.txt"
 
-async def parse_course(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def parse_course(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     fine = False
 
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Пxолучение курса...")
+    sendmess(update, "Начинаем парсинг")
+
 
     rub = commex.get_average()
     c.set('rub', rub)
     print("Average:", rub)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Рубль: {rub}\nПолучаем Bitazza....\n(долго, может больше 2 минут)")
+    # context.bot.send_message(chat_id=update.effective_chat.id, text=f"Рубль: {rub}\nПолучаем Bitazza....\n(долго, может больше 2 минут)")
+    sendmess(update, f"Рубль: {rub}\nПолучаем Bitazza....\n(долго, может больше 2 минут)")
 
     thb = bitazza.get_currency()
     print("Новый курс битаззы: ", thb)
     if thb == 'error':
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Не смогли получить Bitazza")
+        sendmess(update, "Не смогли получить Bitazza")
         print("Ошибка парсинга битаззы")
         return
     else:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Получили Bitazza: {thb}")
+        sendmess(update, f"Получили Bitazza: {thb}")
         c.set('thb', thb)
         fine=True
 
     txt = get_message.get_mess('parse_course', True).format(thb=thb, rub=rub)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=txt)
+    sendmess(update, txt)
 
     ###Запись логов в файл
     file = open(file_name, 'a')
@@ -45,3 +50,12 @@ async def parse_course(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("Курс сейча: ", thb)
 
     return fine
+
+
+def sendmess(update: Update, txt):
+    url = f"https://api.telegram.org/bot{config.pills}/sendMessage?chat_id={update.effective_chat.id}&text={txt}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        print("Message sent successfully")
+    else:
+        print(f"Failed to send message. Status code: {response.status_code}")
