@@ -64,8 +64,3 @@ Date: 2024-03-06 15:58:14, course_THB: 35.81, admin_course_THB: 35.81, user_cour
  admin_course_rub: 93.74, user_course_THB: 93.74
 Date: 2024-03-06 16:32:02, THB: 35.817, 
  RUB: 93.71Date: 2024-03-07 16:26:59, THB: 35.719, 
- RUB: 93.54Date: 2024-03-14 10:43:16, THB: 35.827, 
- RUB: 95.37Date: 2024-03-14 10:45:01, THB: 35.827, 
- RUB: 95.37Date: 2024-03-14 20:27:37, THB: 35.805, 
- RUB: 94.92Date: 2024-03-14 20:28:42, THB: 35.805, 
- RUB: 94.93

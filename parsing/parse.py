@@ -4,7 +4,7 @@ from typing import Any, Coroutine
 import asyncio
 import requests
 
-import config
+from bot import BOT_TOKEN
 import parsing.commex as commex, parsing.bitazza as bitazza
 import database.get_message as get_message
 import database.course as c
@@ -52,7 +52,7 @@ def parse_course():
 
 
 def sendmess(txt):
-    url = f"https://api.telegram.org/bot{config.pills}/sendMessage?chat_id=-4126423671&text={txt}"
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage?chat_id=-4126423671&text={txt}"
     response = requests.get(url)
     if response.status_code == 200:
         print("Message sent successfully")
