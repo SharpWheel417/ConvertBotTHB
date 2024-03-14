@@ -35,4 +35,3 @@ async def get_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     message_text = get_message.get_mess("course", False).format(course_thb_value=course_thb_value, course_thb_rub=course_thb_rub)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=message_text, reply_markup=kb.get_user_base())
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Маржа: {m}, Курс THB: {thb}, Курс RUB: {rub}")

@@ -371,10 +371,10 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
             txt = get_message.get_mess('order_cash', True).format(id=ids,
                                                                 username=username,
                                                                 bat=bat,
-                                                                client_thb_rub=round(client_thb_rub,2),
-                                                                client_rub=round(course_rub,2),
+                                                                client_thb_rub=round(course_rub,2),
+                                                                client_rub=round(course_usdt,2),
                                                                 real_course_thb_rub=round(real_course_thb_rub,2),
-                                                                real_course_rub=c.get('rub'),
+                                                                real_course_rub=c.get('thb'),
                                                                 rub=rub,
                                                                 usdt=usdt,
                                                                 real_rub=round(real_rub,2),
@@ -472,29 +472,25 @@ async def parse(update, context):
 
 
 
-async def runParser(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id in ADMIN_ID:
-    ##### РАСКОМЕНТИРОВАТЬ
-        lock = threading.Lock()
+lock = threading.Lock()
 
-        def run_scheduler():
-            # Запуск шедулера каждый час
-            schedule.every(1).hour.do(lambda: run_with_lock(p.parse_course, False))
+def run_scheduler():
+    # Запуск шедулера каждый час
+    schedule.every(1).hour.do(lambda: run_with_lock(lambda: p.parse_course(), arg=True))
 
-            # Бесконечный цикл для запуска шедулера
-            while True:
-                schedule.run_pending()
-                time.sleep(10)
+    # Бесконечный цикл для запуска шедулера
+    while True:
+        schedule.run_pending()
+        time.sleep(10)
 
-        def run_with_lock(func, args):
-            with lock:
-                func(args)
+def run_with_lock(func, arg):
+    with lock:
+        func()
 
-        # Создание и запуск потока для шедулера
-        scheduler_thread = threading.Thread(target=run_scheduler)
-        scheduler_thread.start()
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="Парсинг каждый час запущен!")
+# Создание и запуск потока для шедулера
+scheduler_thread = threading.Thread(target=run_scheduler)
+scheduler_thread.start()
+
 
 
 ### ИЗМЕНЕНИЕ МАРЖИ
@@ -526,10 +522,6 @@ if __name__ == '__main__':
 
     parse_handler = CommandHandler('parse', parse)
     application.add_handler(parse_handler)
-
-    ##Запускает шедулер каждый час парсинга
-    run_handler = CommandHandler('run', runParser)
-    application.add_handler(run_handler)
 
     ##Запускает шедулер каждый час парсинга
     change_marje_handler = CommandHandler('m', changeMarje)

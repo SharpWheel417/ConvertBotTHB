@@ -25,12 +25,17 @@ async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
             client_c_thb = round(c_thb*(2-m),2)
             usdt =  u_bat/client_c_thb
             txt = get_message.get_mess("usdt", False).format(usdt=round(usdt,2), course_thb=client_c_thb, bat=u_bat)
+            print("\nПользователь ", update.effective_chat.username, " запросил ", round(u_bat,2), "USDT: ", round(usdt,2), "Trade: ", text, "\n")
 
         elif text == '💵 Наличные':
             m = mj.get('cash', db.get_bats(user_id))
-            rub =  u_bat*((c_rub*m)/(c_thb*(2-m)))
-            usdt =  u_bat/(c.get('thb')*(2-m))
-            txt = get_message.get_mess("cash", False).format(course_rub=round(c_rub*(m),2), course_usdt=round(c_thb*(2-m),2), bat=u_bat, rub=round(rub,2), usdt=round(usdt,2))
+            c_m=round(c_thb*(2-m),2)
+            r_m = round((c_rub*m),2)
+            course = round((r_m/c_m),2)
+            rub =  u_bat*course
+            usdt =  u_bat/(c_m)
+            txt = get_message.get_mess("cash", False).format(course_rub=round(course,2), course_usdt=round(c_m,2), bat=u_bat, rub=round(rub,2), usdt=round(usdt,2))
+            print("\nПользователь ", update.effective_chat.username, " запросил ", round(u_bat,2), " USDT: ", round(usdt,2), " Rub: ", rub, " Trade: ", text, "\n")
 
         else:
             m = mj.get('bank',db.get_bats(user_id))
@@ -43,9 +48,10 @@ async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             course_thb_bat = r_m/c_m
 
-            rub =  u_bat*(course_thb_bat)
+            rub =  u_bat*round(course_thb_bat,2)
             usdt =  u_bat/(2-m)
             txt = get_message.get_mess("bank", False).format(course_thb_bat=round(course_thb_bat,2), rub=round(rub,2), bat=u_bat, trade_method=text)
+            print("\n ",update.effective_chat.username, " Запросил: ", u_bat, " Ему вывело: ", round(rub,2), " Курс THB: ", c_thb, " Курс RUB: ", c_rub, " Мараж: ", m, " Метод: ", text, "\n")
 
 
                 # Создание кнопки "Запросить"
@@ -55,7 +61,6 @@ async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Создание клавиатуры с кнопкой "Запросить"
         keyboard = InlineKeyboardMarkup([[request_button]])
         await context.bot.send_message(chat_id=update.effective_chat.id, text=txt, reply_markup=keyboard)
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Маража {m}")
         return
 
     else:
