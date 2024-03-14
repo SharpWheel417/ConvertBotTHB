@@ -26,7 +26,7 @@ async def get_marge(update: Update, context: ContextTypes.DEFAULT_TYPE):
     messages = []
     message = "Список Маржи:\n"
     for row in marje:
-        message += f"Сумма: {row[1]}, Мараж: {row[2]}, Тип: {row[3]}\n"
+        message += f"Сумма: {row[1]}, Маржа: {row[2]}, Тип: {row[3]}\n"
         if len(message) > 3000:  # Пример максимальной длины сообщения
             messages.append(message)
             message = "Список Маржи (продолжение):\n"
