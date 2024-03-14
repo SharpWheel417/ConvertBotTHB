@@ -24,9 +24,9 @@ import view.stats as vs
 import view.orders as vo
 import view.changeCourse as vcc
 
-from config import pills
+from config import battle_life
 
-BOT_TOKEN = pills
+BOT_TOKEN = battle_life
 
 ADMIN_ID = [1194700554, 6920037183]
 # ADMIN_ID = [1194700554]
