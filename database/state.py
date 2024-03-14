@@ -24,7 +24,7 @@ def set_state_calc(chat_id, calculate):
 def get_state_calc(chat_id):
     cur.execute(f"SELECT calculate FROM user_state WHERE chat_id = '{chat_id}'")
     result = cur.fetchone()
-    if result:
+    if result[0]:
         return result[0].replace(" ","")
     else:
         return None
