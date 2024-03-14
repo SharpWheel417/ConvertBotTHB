@@ -68,6 +68,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global user_course_rub, user_course_THB
     user_id = update.effective_user.id
     username = update.effective_user.username
+    print(update._effective_chat.id)
     if update.effective_user.last_name is None:
         user_fio = update.effective_user.first_name
     else:
@@ -460,22 +461,11 @@ async def parse(update, context):
     user_id = update.effective_user.id
     if user_id in ADMIN_ID:
 
-        p.parse_course(update, context)
-
-
-        # loop = asyncio.get_event_loop()
-        # await loop.run_in_executor(None, p.parse_course, update, context)
-
-        # thread = threading.Thread(target=p.parse_course, args=(update, context))
-        # thread.start()
-
-        # await asyncio.get_event_loop().run_in_executor(None, p.parse_course, update, context)
+        thread = threading.Thread(target=p.parse_course)
+        thread.start()
 
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Вы не админ")
-
-
-
 
 
 
@@ -485,21 +475,21 @@ async def runParser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ##### РАСКОМЕНТИРОВАТЬ
         lock = threading.Lock()
 
-        def run_scheduler(update, context):
+        def run_scheduler():
             # Запуск шедулера каждый час
-            schedule.every(1).hour.do(functools.partial(run_with_lock, p.parse_course, update, context, False))
+            schedule.every(1).hour.do(lambda: run_with_lock(p.parse_course, False))
 
             # Бесконечный цикл для запуска шедулера
             while True:
                 schedule.run_pending()
                 time.sleep(10)
 
-        def run_with_lock(func, *args):
+        def run_with_lock(func, args):
             with lock:
-                func(*args)
+                func(args)
 
         # Создание и запуск потока для шедулера
-        scheduler_thread = threading.Thread(target=run_scheduler, args=(update, context))
+        scheduler_thread = threading.Thread(target=run_scheduler)
         scheduler_thread.start()
         await context.bot.send_message(chat_id=update.effective_chat.id, text="Парсинг каждый час запущен!")
 
