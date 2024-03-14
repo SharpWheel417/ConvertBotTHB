@@ -2,17 +2,10 @@ import psycopg2
 from database.connect import cur, conn
 from decimal import Decimal
 
-def get(type: str, bat: int) -> Decimal:
-
-    if type == "💵 Наличные":
-        type = "cash"
-    elif type == "🟩 USDT":
-        type = "usdt"
-    else:
-        type = "bank"
+def get(typ: str, bat: int) -> Decimal:
 
     q = "SELECT marje FROM marje WHERE type=%s ORDER BY ABS(count - %s) LIMIT 1"
-    cur.execute(q, (type, bat))
+    cur.execute(q, (typ, bat))
     result = cur.fetchone()
     if result:
         return float(result[0].quantize(Decimal('0.001')))
