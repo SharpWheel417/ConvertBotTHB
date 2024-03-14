@@ -24,9 +24,9 @@ import view.stats as vs
 import view.orders as vo
 import view.changeCourse as vcc
 
-from config import pills
+from config import battle_life
 
-BOT_TOKEN = pills
+BOT_TOKEN = battle_life
 
 ADMIN_ID = [1194700554, 6920037183]
 # ADMIN_ID = [1194700554]
@@ -460,14 +460,14 @@ async def parse(update, context):
     user_id = update.effective_user.id
     if user_id in ADMIN_ID:
 
-        # p.parse_course(update, context)
+        p.parse_course(update, context)
 
 
         # loop = asyncio.get_event_loop()
         # await loop.run_in_executor(None, p.parse_course, update, context)
 
-        thread = threading.Thread(target=p.parse_course, args=(update, context))
-        thread.start()
+        # thread = threading.Thread(target=p.parse_course, args=(update, context))
+        # thread.start()
 
         # await asyncio.get_event_loop().run_in_executor(None, p.parse_course, update, context)
 
