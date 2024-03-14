@@ -108,6 +108,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if text == 'Главное меню':
             await context.bot.send_message(chat_id=update.effective_chat.id, text='На главную', reply_markup=keyboards.get_admin_base())
+            s.set_state(user_id, '0')
 
         if text == 'Заказы':
             s.set_state(user_id, 'Заказы')
@@ -261,8 +262,10 @@ async def button_callback(update: Update, context: CallbackContext, *args, **kwa
         username, order_id = regexes.admin_apply_user_name(query.message.text)
         chat_id = db.get_chat_id(username)
 
+        txt = get_message.get_mess("take_order", False).format(order_id=order_id)
+
         ## Отправляем сообщение пользователю
-        await context.bot.send_message(chat_id=chat_id, text=get_message.get_mess("take_order", False))
+        await context.bot.send_message(chat_id=chat_id, text=txt)
 
         db.update_order(order_id, 'in_progress')
 
