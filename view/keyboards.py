@@ -47,7 +47,7 @@ def get_admin_courses():
             resize_keyboard=True)
 
 def get_user_complete():
-    return ReplyKeyboardMarkup([['Поставить оценку'], ['Выбрать сумму']], resize_keyboard=True)
+    return ReplyKeyboardMarkup([['Поставить оценку'], ['🟰 Выбрать сумму']], resize_keyboard=True)
 
 def get_user_marks():
     return ReplyKeyboardMarkup([['1', '2', '3', '4', '5']], resize_keyboard=True)
