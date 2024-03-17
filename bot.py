@@ -200,7 +200,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         ### Для юзеров ###
-        if text == "Выбрать сумму":
+        if text == "🟰 Выбрать сумму":
             s.set_state(user_id, '0')
 
             await context.bot.send_message(chat_id=update.effective_chat.id, text=get_message.get_mess("take_sum", False), reply_markup=keyboards.get_user_base())
