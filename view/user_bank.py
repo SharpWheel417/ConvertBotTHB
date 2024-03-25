@@ -6,6 +6,8 @@ import database.get_message as get_message
 import parsing.commex as commex
 import database.marje as mj
 
+impor
+
 
 async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -25,7 +27,8 @@ async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
             client_c_thb = round(c_thb*(2-m),2)
             usdt =  u_bat/client_c_thb
             txt = get_message.get_mess("usdt", False).format(usdt=round(usdt,2), course_thb=client_c_thb, bat=u_bat)
-            print("\nПользователь ", update.effective_chat.username, " запросил ", round(u_bat,2), "USDT: ", round(usdt,2), "Trade: ", text, "\n")
+            if update.effective_chat.username is None:
+                print("\nПользователь ", update.effective_chat.first_name+" "+update.effective_chat.last_name, " запросил ", round(u_bat,2), "USDT: ", round(usdt,2), "Trade: ", text, "\n")
 
         elif text == '💵 Наличные':
             m = mj.get('cash', db.get_bats(user_id))

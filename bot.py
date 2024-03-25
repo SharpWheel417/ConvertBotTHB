@@ -474,6 +474,7 @@ async def parse(update, context):
 
 
 lock = threading.Lock()
+scheduler_thread = None
 
 def run_scheduler():
     # Запуск шедулера каждый час
@@ -488,7 +489,11 @@ def run_with_lock(func, arg):
     with lock:
         func()
 
-# Создание и запуск потока для шедулера
+# Остановка и завершение предыдущего потока, если он существует
+if 'scheduler_thread' in globals():
+    scheduler_thread.join()  # Ожидание завершения потока
+
+# Создание и запуск нового потока для шедулера
 scheduler_thread = threading.Thread(target=run_scheduler)
 scheduler_thread.start()
 
