@@ -476,6 +476,7 @@ async def parse(update, context):
 lock = threading.Lock()
 scheduler_thread = None
 
+
 def run_scheduler():
     # Запуск шедулера каждый час
     schedule.every(1).hour.do(lambda: run_with_lock(lambda: p.parse_course(), arg=True))
@@ -490,14 +491,12 @@ def run_with_lock(func, arg):
         func()
 
 # Остановка и завершение предыдущего потока, если он существует
-if 'scheduler_thread' in globals():
-    scheduler_thread.join()  # Ожидание завершения потока
+if scheduler_thread is not None:
+    scheduler_thread.join()
 
 # Создание и запуск нового потока для шедулера
 scheduler_thread = threading.Thread(target=run_scheduler)
 scheduler_thread.start()
-
-
 
 ### ИЗМЕНЕНИЕ МАРЖИ
 async def changeMarje(update: Update, context: ContextTypes.DEFAULT_TYPE):

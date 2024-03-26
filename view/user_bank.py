@@ -6,8 +6,6 @@ import database.get_message as get_message
 import parsing.commex as commex
 import database.marje as mj
 
-impor
-
 
 async def get(text: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
 
