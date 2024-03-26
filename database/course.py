@@ -13,7 +13,7 @@ def get(type: str) -> Decimal:
 
 
 def set(type: str, count: float):
-    if count not is None:
+    if count is not None:
         q = f"INSERT INTO course (type, course) VALUES ('{type}', {count}) ON CONFLICT (type) DO UPDATE SET course = {count}"
         print(q)
         cur.execute(q)
