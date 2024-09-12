@@ -5,7 +5,8 @@ import asyncio
 import requests
 
 from bot import BOT_TOKEN
-import parsing.commex as commex, parsing.bitazza as bitazza
+# import parsing.commex as commex, parsing.bitazza as bitazza
+from parsing.bybit import get_currency, get_currency_rub
 import database.get_message as get_message
 import database.course as c
 
@@ -20,13 +21,13 @@ def parse_course():
     sendmess("Начинаем парсинг")
 
 
-    rub = commex.get_average()
+    rub = get_currency_rub()
     c.set('rub', rub)
     print("Average:", rub)
     # context.bot.send_message(chat_id=ffective_chat.id, text=f"Рубль: {rub}\nПолучаем Bitazza....\n(долго, может больше 2 минут)")
     sendmess(f"Рубль: {rub}\nПолучаем Bitazza....\n(долго, может больше 2 минут)")
 
-    thb = bitazza.get_currency()
+    thb = get_currency()
     print("Новый курс битаззы: ", thb)
     if thb == 'error':
         sendmess("Не смогли получить Bitazza")
